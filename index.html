@@ -3,1236 +3,1777 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>GARDES — Desiderata • Répartition • Résultats</title>
+  <title>GARDES — Console 3 Mois</title>
+
+  <!-- =========================================================
+    GARDES — Interface “aboutie”
+    - Single-file (HTML/CSS/JS)
+    - Pas de noms pré-enregistrés (tout est user-driven)
+    - Vues : 3 mois calendrier + timeline + couverture
+    - Jours fériés BE (légaux) toggle
+    - Mi-temps colorés (AM/PM)
+    - Import/Export JSON (et export ICS minimal)
+    - Règles (suggestions) : base extensible
+    ========================================================= -->
+
+  <!-- FullCalendar (calendar grid) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+  <!-- vis-timeline (timeline) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.3/styles/vis-timeline-graph2d.min.css">
+
   <style>
     :root{
-      --bg:#0f1115; --fg:#e9edf5; --muted:#a8b0bd;
-      --card:rgba(18,20,30,.62); --card2:rgba(18,20,30,.42);
-      --stroke:rgba(255,255,255,.08);
-      --good:rgba(120,255,170,.14);
-      --bad:rgba(255,120,120,.14);
-      --warn:rgba(255,210,120,.16);
-      --accent:#8ad1ff;
+      --bg:#0e1014;
+      --panel:#151923;
+      --panel2:#101521;
+      --glass: rgba(255,255,255,.06);
+      --glass2: rgba(255,255,255,.10);
+      --fg:#e9edf6;
+      --muted:#a8b0bf;
+      --line: rgba(255,255,255,.10);
+      --good:#7CFFB2;
+      --warn:#FFD37C;
+      --bad:#FF7CA3;
+
       --r:18px;
-      --shadow: 0 18px 50px rgba(0,0,0,.55);
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family:var(--font);
-      background: radial-gradient(1200px 800px at 20% 0%, rgba(60,120,255,.10), transparent 60%),
-                  radial-gradient(1000px 700px at 90% 10%, rgba(100,255,200,.08), transparent 55%),
-                  var(--bg);
-      color:var(--fg);
-    }
-    header{
-      position:sticky; top:0; z-index:5;
-      backdrop-filter: blur(14px);
-      background: rgba(12,14,20,.55);
-      border-bottom:1px solid var(--stroke);
-    }
-    .wrap{max-width:1180px; margin:0 auto; padding:14px 14px 28px;}
-    .top{
-      display:flex; gap:12px; align-items:center; justify-content:space-between;
-      padding:10px 0;
-    }
-    .brand{
-      display:flex; flex-direction:column; gap:2px;
-    }
-    .brand .t{font-weight:700; letter-spacing:.4px}
-    .brand .s{font-size:12px; color:var(--muted)}
-    .tabs{display:flex; gap:8px; flex-wrap:wrap;}
-    .tab{
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.04);
-      color:var(--fg);
-      padding:10px 12px;
-      border-radius:999px;
-      cursor:pointer;
-      user-select:none;
-      transition: .15s transform ease, .15s background ease;
-      font-size:13px;
-    }
-    .tab:hover{transform:translateY(-1px); background:rgba(255,255,255,.06)}
-    .tab.active{background:rgba(138,209,255,.15); border-color:rgba(138,209,255,.35)}
-    .grid{
-      display:grid; gap:12px;
-      grid-template-columns: 1.25fr .75fr;
-    }
-    @media(max-width:980px){ .grid{grid-template-columns:1fr} }
-    .card{
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, var(--card), var(--card2));
-      border-radius: var(--r);
-      box-shadow: var(--shadow);
-      padding:14px;
-    }
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    label{font-size:12px; color:var(--muted)}
-    select, input[type="text"], input[type="date"], input[type="number"]{
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--stroke);
-      color:var(--fg);
-      padding:10px 10px;
-      border-radius: 12px;
-      outline:none;
-    }
-    input[type="number"]{width:110px}
-    button{
-      background: rgba(138,209,255,.14);
-      border:1px solid rgba(138,209,255,.25);
-      color:var(--fg);
-      padding:10px 12px;
-      border-radius: 12px;
-      cursor:pointer;
-      transition:.15s transform ease, .15s background ease;
-    }
-    button:hover{transform:translateY(-1px); background:rgba(138,209,255,.18)}
-    button.ghost{
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--stroke);
-    }
-    button.danger{
-      background: rgba(255,120,120,.14);
-      border-color: rgba(255,120,120,.25);
-    }
-    .hint{font-size:12px; color:var(--muted); line-height:1.35}
-    .hr{height:1px; background:var(--stroke); margin:12px 0}
-    .title{font-weight:700; margin:2px 0 10px}
-    .pill{
-      font-size:12px; padding:6px 10px; border-radius:999px;
-      border:1px solid var(--stroke); background:rgba(255,255,255,.04);
-      color:var(--muted);
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
+
+      /* types */
+      --g1:#4aa3ff;      /* garde 1ère ligne */
+      --g2:#c38bff;      /* garde 2ème ligne */
+      --leave:#ff7c7c;   /* congé */
+      --am:#61f0c6;      /* mi-temps AM */
+      --pm:#ffcf6b;      /* mi-temps PM */
+      --holiday:#b0b7ff; /* férié */
+
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --font2: ui-sans-serif, system-ui, -apple-system, "SF Pro Display","Segoe UI", Roboto, Helvetica, Arial;
     }
 
-    /* Calendar */
-    .calHead{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px}
-    .calGrid{
-      display:grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap:8px;
+    [data-theme="light"]{
+      --bg:#f4f6fb;
+      --panel:#ffffff;
+      --panel2:#ffffff;
+      --glass: rgba(0,0,0,.04);
+      --glass2: rgba(0,0,0,.06);
+      --fg:#141826;
+      --muted:#5b6477;
+      --line: rgba(0,0,0,.10);
+      --shadow: 0 18px 60px rgba(10, 20, 40, .12);
     }
-    .dow{
-      font-size:11px; color:var(--muted);
-      text-align:center; padding:6px 0;
-    }
-    .day{
-      border:1px solid var(--stroke);
-      border-radius:14px;
-      padding:9px 9px 10px;
-      background: rgba(255,255,255,.03);
-      min-height:76px;
-      cursor:pointer;
-      position:relative;
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--font);
+      background: radial-gradient(1200px 800px at 20% -10%, rgba(74,163,255,.25), transparent 55%),
+                  radial-gradient(900px 700px at 100% 0%, rgba(195,139,255,.18), transparent 60%),
+                  radial-gradient(900px 700px at 20% 110%, rgba(97,240,198,.12), transparent 55%),
+                  var(--bg);
+      color: var(--fg);
       overflow:hidden;
     }
-    .day.off{background: linear-gradient(180deg, rgba(255,120,120,.10), rgba(255,255,255,.02));}
-    .day.pref{background: linear-gradient(180deg, rgba(120,255,170,.10), rgba(255,255,255,.02));}
-    .day.hol{outline: 1px solid rgba(255,210,120,.25); background: linear-gradient(180deg, rgba(255,210,120,.10), rgba(255,255,255,.02));}
-    .day.today{outline: 1px solid rgba(138,209,255,.35);}
-    .day .n{font-size:12px; color:var(--muted)}
-    .badges{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
-    .b{
-      font-size:11px; padding:3px 7px; border-radius:999px;
-      border:1px solid var(--stroke);
-      background:rgba(0,0,0,.12);
-      color:var(--muted);
+
+    /* Layout */
+    .app{
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      height:100%;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .left{
+      background: linear-gradient(180deg, var(--glass2), var(--glass));
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-width: 320px;
+    }
+
+    .main{
+      background: linear-gradient(180deg, var(--glass2), var(--glass));
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-width: 0;
+    }
+
+    /* Left header */
+    .leftTop{
+      padding: 14px 14px 10px 14px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand h1{
+      margin:0;
+      font-family: var(--font2);
+      letter-spacing: .2px;
+      font-weight: 780;
+      font-size: 16px;
+      line-height: 1.1;
+    }
+    .brand .sub{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--fg);
+    }
+    [data-theme="light"] .pill{ background: rgba(0,0,0,.03); }
+
+    .pill b{ font-weight: 750; }
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--fg);
+      padding: 9px 10px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-size: 12px;
+      line-height: 1;
+      transition: background .15s ease;
+      user-select:none;
+    }
+    [data-theme="light"] .btn{ background: rgba(0,0,0,.03); }
+    .btn:hover{ background: rgba(255,255,255,.06); }
+    [data-theme="light"] .btn:hover{ background: rgba(0,0,0,.06); }
+
+    .btn.primary{
+      border-color: rgba(74,163,255,.55);
+      background: rgba(74,163,255,.12);
+    }
+    .btn.danger{
+      border-color: rgba(255,124,124,.55);
+      background: rgba(255,124,124,.12);
+    }
+
+    .toggle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      color: var(--muted);
+      user-select:none;
+    }
+    .toggle input{ accent-color: var(--g1); }
+
+    .hr{
+      height:1px; background: var(--line);
+      margin: 10px 0;
+    }
+
+    /* Left content */
+    .leftBody{
+      padding: 12px 12px 14px 12px;
+      overflow:auto;
+    }
+
+    .sectionTitle{
+      margin: 10px 0 8px 0;
+      font-size: 12px;
+      letter-spacing:.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .card{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    [data-theme="light"] .card{ background: rgba(0,0,0,.03); }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    label{
+      font-size: 11px;
+      color: var(--muted);
+      display:block;
+      margin-bottom: 6px;
+    }
+    input, select, textarea{
+      width:100%;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.16);
+      color: var(--fg);
+      outline:none;
+      font-size: 13px;
+    }
+    [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea{
+      background: rgba(255,255,255,.65);
+      color: var(--fg);
+    }
+    textarea{ min-height: 74px; resize: vertical; }
+
+    .personList{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .personItem{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius: 14px;
+      padding: 10px 10px;
+    }
+    [data-theme="light"] .personItem{ background: rgba(0,0,0,.03); }
+
+    .personLeft{
+      display:flex; align-items:center; gap:10px;
+      min-width:0;
+    }
+    .dot{
+      width:12px; height:12px; border-radius:999px;
+      background: var(--g1);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.06);
+      flex: 0 0 auto;
+    }
+    .personName{
+      font-weight: 700;
+      font-size: 13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .personMeta{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+    .mini{
+      display:flex; flex-direction:column; min-width:0;
+    }
+    .iconBtn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--fg);
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+      user-select:none;
+    }
+    [data-theme="light"] .iconBtn{ background: rgba(0,0,0,.03); }
+    .iconBtn:hover{ background: rgba(255,255,255,.06); }
+    [data-theme="light"] .iconBtn:hover{ background: rgba(0,0,0,.06); }
+
+    /* Main header */
+    .mainTop{
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .tabs{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .tab{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--fg);
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    [data-theme="light"] .tab{ background: rgba(0,0,0,.03); }
+    .tab.active{
+      border-color: rgba(74,163,255,.55);
+      background: rgba(74,163,255,.12);
+      font-weight: 750;
+    }
+
+    .mainBody{
+      display:flex;
+      flex: 1 1 auto;
+      min-height:0;
+      overflow:hidden;
+    }
+
+    .view{
+      flex:1;
+      min-width:0;
+      display:none;
+      overflow:auto;
+      padding: 10px 10px 14px 10px;
+    }
+    .view.active{ display:block; }
+
+    /* Calendar 3 months */
+    .calGrid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+    .calCard{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius: 18px;
+      padding: 10px;
+      overflow:hidden;
+    }
+    [data-theme="light"] .calCard{ background: rgba(0,0,0,.03); }
+    .calCard h3{
+      margin:0 0 8px 0;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 750;
+      letter-spacing:.2px;
+    }
+
+    /* FullCalendar tweaks */
+    .fc{ font-size: 12px; }
+    .fc .fc-toolbar{ display:none; }
+    .fc .fc-daygrid-day-number{ color: var(--muted); }
+    .fc .fc-col-header-cell-cushion{ color: var(--muted); font-weight:650; }
+    .fc .fc-scrollgrid{ border-color: var(--line); }
+    .fc-theme-standard td, .fc-theme-standard th{ border-color: var(--line); }
+    .fc .fc-day-today{ background: rgba(97,240,198,.08) !important; }
+
+    /* Timeline */
+    #timeline{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius: 18px;
+      height: calc(100vh - 140px);
+      min-height: 520px;
+      overflow:hidden;
+    }
+    [data-theme="light"] #timeline{ background: rgba(0,0,0,.03); }
+
+    /* Coverage table */
+    .coverageWrap{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius: 18px;
+      overflow:hidden;
+    }
+    [data-theme="light"] .coverageWrap{ background: rgba(0,0,0,.03); }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td{
+      border-bottom:1px solid var(--line);
+      padding: 10px 10px;
+      text-align:left;
+      vertical-align: top;
+    }
+    th{
+      color: var(--muted);
+      font-weight: 750;
+      background: rgba(255,255,255,.02);
+    }
+    [data-theme="light"] th{ background: rgba(0,0,0,.02); }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      margin: 2px 6px 2px 0;
+      font-size: 12px;
       white-space:nowrap;
     }
-    .b.garde{border-color:rgba(138,209,255,.25); color:rgba(138,209,255,.95)}
-    .b.recup{border-color:rgba(120,255,170,.25); color:rgba(120,255,170,.95)}
-    .b.bloc{border-color:rgba(255,210,120,.25); color:rgba(255,210,120,.95)}
-    .b.note{border-color:rgba(255,255,255,.12)}
-    .legend{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-
-    /* Lists */
-    .list{display:flex; flex-direction:column; gap:8px; margin-top:10px}
-    .item{
-      border:1px solid var(--stroke);
-      border-radius:14px;
-      padding:10px;
-      background: rgba(255,255,255,.03);
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-      justify-content:space-between;
+    [data-theme="light"] .badge{ background: rgba(0,0,0,.03); }
+    .sq{
+      width:9px;height:9px;border-radius:3px;background:var(--g1);
     }
-    .item .meta{display:flex; flex-direction:column; gap:3px}
-    .item .meta .k{font-size:12px; color:var(--muted)}
-    .item .meta .v{font-size:13px}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:var(--muted)}
-    textarea{
-      width:100%;
-      min-height:120px;
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--stroke);
-      color:var(--fg);
-      padding:10px;
-      border-radius: 12px;
-      outline:none;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size:12px;
+
+    /* Modal */
+    .modalBackdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+      z-index: 9999;
+    }
+    .modalBackdrop.show{ display:flex; }
+    .modal{
+      width: min(920px, 98vw);
+      max-height: 92vh;
+      overflow:auto;
+      background: var(--panel);
+      border:1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+    [data-theme="light"] .modal{ background: var(--panel); }
+    .modalTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding: 14px 14px 10px 14px;
+      border-bottom:1px solid var(--line);
+    }
+    .modalTop h2{
+      margin:0;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .modalBody{
+      padding: 12px 14px 14px 14px;
+    }
+    .help{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0 0 10px 0;
+    }
+
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      align-items:start;
+    }
+
+    .kpi{
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .k{
+      flex:1;
+      min-width: 160px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      padding: 10px 12px;
+    }
+    [data-theme="light"] .k{ background: rgba(0,0,0,.03); }
+    .k .t{ font-size: 11px; color: var(--muted); }
+    .k .v{ font-weight: 850; font-size: 16px; margin-top:4px; }
+
+    .smallNote{
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px){
+      .app{ grid-template-columns: 1fr; overflow:auto; }
+      body{ overflow:auto; }
+      .main{ min-height: 70vh; }
+      .calGrid{ grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body>
-<header>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand">
-        <div class="t">GARDES</div>
-        <div class="s">Desiderata → Répartition → Résultats (local, minimaliste, calcul points + récup)</div>
+
+<body data-theme="dark">
+  <div class="app">
+
+    <!-- LEFT PANEL -->
+    <aside class="left">
+      <div class="leftTop">
+        <div class="brand">
+          <div>
+            <h1>GARDES — Console</h1>
+            <div class="sub">3 mois • timeline • couverture • propositions</div>
+          </div>
+          <button class="iconBtn" id="btnTheme" title="Basculer thème">☼</button>
+        </div>
+
+        <div class="row">
+          <span class="pill"><b id="kPersons">0</b> personnes</span>
+          <span class="pill"><b id="kEvents">0</b> événements</span>
+          <span class="pill"><b id="kRange">—</b></span>
+        </div>
+
+        <div class="row">
+          <button class="btn primary" id="btnAddEvent">+ Ajouter événement</button>
+          <button class="btn" id="btnPropose">Proposer</button>
+          <button class="btn danger" id="btnReset">Reset</button>
+        </div>
+
+        <div class="row" style="justify-content:space-between;">
+          <label class="toggle"><input type="checkbox" id="tglHolidays" checked> Afficher fériés BE</label>
+          <label class="toggle"><input type="checkbox" id="tglRecup" checked> Afficher récup</label>
+          <label class="toggle"><input type="checkbox" id="tglHalf" checked> Afficher mi-temps</label>
+        </div>
       </div>
-      <div class="tabs">
-        <div class="tab active" data-view="desiderata">1) Desiderata</div>
-        <div class="tab" data-view="admin">2) Répartition</div>
-        <div class="tab" data-view="result">3) Résultat</div>
+
+      <div class="leftBody">
+
+        <div class="sectionTitle">
+          <span>Personnes</span>
+          <button class="btn" id="btnAddPerson">+ Ajouter</button>
+        </div>
+
+        <div class="card">
+          <div class="grid2">
+            <div>
+              <label>Nom / Initiales</label>
+              <input id="pLabel" placeholder="ex: C. Tahhan / J.-B. / A.">
+            </div>
+            <div>
+              <label>Quotité</label>
+              <select id="pQuota">
+                <option value="1.0">Temps plein (1.0)</option>
+                <option value="0.8">0.8</option>
+                <option value="0.6">0.6</option>
+                <option value="0.5">Mi-temps (0.5)</option>
+              </select>
+            </div>
+            <div>
+              <label>Couleur</label>
+              <input id="pColor" type="color" value="#4aa3ff">
+            </div>
+            <div style="display:flex; align-items:end; gap:8px;">
+              <button class="btn primary" id="btnSavePerson" style="width:100%;">Enregistrer</button>
+            </div>
+          </div>
+          <div class="smallNote">
+            Pas d’annuaire imposé. Tu crées, tu renommes, tu supprimes. Comme un dieu du planning (mais sans les éclairs).
+          </div>
+        </div>
+
+        <div class="personList" id="personList"></div>
+
+        <div class="hr"></div>
+
+        <div class="sectionTitle">
+          <span>Import / Export</span>
+        </div>
+        <div class="card">
+          <div class="row">
+            <button class="btn" id="btnExportJSON">Exporter JSON</button>
+            <button class="btn" id="btnImportJSON">Importer JSON</button>
+            <button class="btn" id="btnExportICS">Exporter ICS</button>
+          </div>
+          <textarea id="ioBox" placeholder="Ici tu peux coller/voir un JSON. Import/Export en un clic."></textarea>
+          <div class="smallNote">
+            Import Excel : volontairement pas dans cette V1 single-file (sinon on ajoute SheetJS via CDN et c’est 2000 lignes de plus).
+            Mais le format JSON est déjà “Excel-friendly” à générer.
+          </div>
+        </div>
+
+        <div class="sectionTitle">
+          <span>Règles (rappel)</span>
+        </div>
+        <div class="card">
+          <div class="help">
+            - Garde semaine 18h–9h (transmissions 8h20 urg, 8h30 UC) <br>
+            - WE/férié : 8–18 & 18–8 (transmission 8h/18h) <br>
+            - 2ème ligne : à appeler sans hésiter, obligatoire avant décision d’expertise <br>
+            - Pas de 2ème ligne si déjà 1ère ligne dans la semaine
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="mainTop">
+        <div class="tabs">
+          <div class="tab active" data-view="cal">Calendrier (3 mois)</div>
+          <div class="tab" data-view="time">Timeline</div>
+          <div class="tab" data-view="cover">Couverture</div>
+        </div>
+        <div class="row">
+          <button class="btn" id="btnToday">Aujourd’hui</button>
+          <button class="btn" id="btnPrev">◀</button>
+          <button class="btn" id="btnNext">▶</button>
+          <span class="pill"><b id="rangeTitle">—</b></span>
+        </div>
+      </div>
+
+      <div class="mainBody">
+        <section class="view active" id="viewCal">
+          <div class="calGrid">
+            <div class="calCard"><h3 id="m1Title">Mois 1</h3><div id="cal1"></div></div>
+            <div class="calCard"><h3 id="m2Title">Mois 2</h3><div id="cal2"></div></div>
+            <div class="calCard"><h3 id="m3Title">Mois 3</h3><div id="cal3"></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="viewTime">
+          <div id="timeline"></div>
+        </section>
+
+        <section class="view" id="viewCover">
+          <div class="coverageWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:120px;">Date</th>
+                  <th>Garde 1ère ligne</th>
+                  <th>Garde 2ème ligne</th>
+                  <th>Congés / Mi-temps / Récup / Férié</th>
+                </tr>
+              </thead>
+              <tbody id="coverageBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: Add event -->
+  <div class="modalBackdrop" id="modalBack">
+    <div class="modal">
+      <div class="modalTop">
+        <h2 id="modalTitle">Ajouter un événement</h2>
+        <button class="iconBtn" id="btnCloseModal" title="Fermer">✕</button>
+      </div>
+      <div class="modalBody">
+        <p class="help">
+          Tu ajoutes un bloc : garde (1L/2L), congé, mi-temps AM/PM, autre.
+          Les fériés BE sont générés automatiquement (toggle).
+        </p>
+
+        <div class="split">
+          <div class="card">
+            <div class="grid2">
+              <div>
+                <label>Type</label>
+                <select id="eType">
+                  <option value="g1_week">Garde 1ère ligne — Semaine nuit (18–9)</option>
+                  <option value="g1_we_day">Garde 1ère ligne — WE/JF Jour (8–18)</option>
+                  <option value="g1_we_night">Garde 1ère ligne — WE/JF Nuit (18–8)</option>
+
+                  <option value="g2_week">Garde 2ème ligne — Semaine</option>
+                  <option value="g2_weekend">Garde 2ème ligne — WE/JF</option>
+
+                  <option value="leave">Congé</option>
+                  <option value="half_am">Mi-temps AM (8h30–13h)</option>
+                  <option value="half_pm">Mi-temps PM (13h45–18h15)</option>
+                  <option value="note">Autre (note / formation)</option>
+                </select>
+              </div>
+              <div>
+                <label>Assigné à</label>
+                <select id="ePerson"></select>
+              </div>
+
+              <div>
+                <label>Date début</label>
+                <input type="date" id="eStart">
+              </div>
+              <div>
+                <label>Date fin (optionnel)</label>
+                <input type="date" id="eEnd">
+              </div>
+
+              <div style="grid-column: 1 / -1;">
+                <label>Commentaire</label>
+                <input id="eNote" placeholder="ex: expertise prévue / récup à caler / etc.">
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <button class="btn primary" id="btnSaveEvent">Enregistrer</button>
+              <button class="btn" id="btnDeleteEvent" style="display:none;">Supprimer</button>
+            </div>
+
+            <div class="smallNote">
+              Les gardes “semaine nuit” créeront automatiquement un bloc “récup” le lendemain si le toggle Récup est activé.
+              (Tu peux raffiner la règle ensuite : vendredis, veilles fériées, etc.)
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="kpi">
+              <div class="k"><div class="t">Propositions congés</div><div class="v" id="kSugLeave">—</div></div>
+              <div class="k"><div class="t">Propositions gardes</div><div class="v" id="kSugGuard">—</div></div>
+            </div>
+            <div class="hr"></div>
+            <div class="help" id="suggestBox">
+              Clique “Proposer” dans la barre de gauche : tu auras une shortlist basée sur une heuristique simple
+              (éviter veille/retour de garde, coller aux récup, équilibrage minimal).
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
-</header>
 
-<div class="wrap">
-  <!-- VIEW 1 -->
-  <section id="view-desiderata" class="grid">
-    <div class="card">
-      <div class="title">Desiderata — calendrier</div>
-      <div class="row">
-        <div>
-          <label>Personne</label><br/>
-          <select id="selPerson"></select>
-        </div>
-        <div>
-          <label>Période (début)</label><br/>
-          <input type="date" id="rangeStart">
-        </div>
-        <div>
-          <label>Période (fin)</label><br/>
-          <input type="date" id="rangeEnd">
-        </div>
-        <div>
-          <label>Mois affiché</label><br/>
-          <input type="month" id="monthPick">
-        </div>
-        <button class="ghost" id="btnToday">Aujourd’hui</button>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="row">
-        <div class="pill">Clique un jour : cycle <span class="mono">Libre → Éviter garde → Préf garde → Éviter congé → Bloc consult</span></div>
-      </div>
-
-      <div class="calHead">
-        <button class="ghost" id="prevMonth">◀</button>
-        <div class="row">
-          <div class="pill" id="calLabel">—</div>
-          <div class="pill" id="holCount">—</div>
-        </div>
-        <button class="ghost" id="nextMonth">▶</button>
-      </div>
-
-      <div class="calGrid" id="calDOW"></div>
-      <div class="calGrid" id="cal"></div>
-
-      <div class="legend">
-        <span class="pill">Férié = contour doré</span>
-        <span class="pill">Éviter garde = rouge doux</span>
-        <span class="pill">Préférer garde = vert doux</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="title">Paramètres personnels</div>
-
-      <div class="row">
-        <div>
-          <label>Mi-temps / FTE (0.5, 0.8, 1.0…)</label><br/>
-          <input type="number" id="fte" min="0.1" max="1.0" step="0.1">
-        </div>
-        <div>
-          <label>Congés souhaités (nb sur la période)</label><br/>
-          <input type="number" id="wishLeaves" min="0" max="30" step="1">
-        </div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="title">Résumé rapides</div>
-      <div class="list" id="prefSummary"></div>
-
-      <div class="hr"></div>
-
-      <div class="row">
-        <button id="btnSave">Enregistrer</button>
-        <button class="ghost" id="btnExportMe">Exporter mes desiderata (JSON)</button>
-        <button class="ghost" id="btnImportMe">Importer (JSON)</button>
-        <button class="danger" id="btnResetMe">Reset personne</button>
-      </div>
-
-      <div class="hr"></div>
-      <div class="hint">
-        Astuce : en “vrai monde”, chaque personne peut remplir ses desiderata puis te remettre un JSON (mail/drive).
-        L’admin importe tout et lance la répartition.
-      </div>
-
-      <input type="file" id="fileImportMe" accept="application/json" style="display:none"/>
-    </div>
-  </section>
-
-  <!-- VIEW 2 -->
-  <section id="view-admin" class="grid" style="display:none">
-    <div class="card">
-      <div class="title">Répartition — paramètres</div>
-
-      <div class="row">
-        <div>
-          <label>Période (début)</label><br/>
-          <input type="date" id="admStart">
-        </div>
-        <div>
-          <label>Période (fin)</label><br/>
-          <input type="date" id="admEnd">
-        </div>
-        <div>
-          <label>Éviter back-to-back (garde la veille)</label><br/>
-          <select id="avoidBack">
-            <option value="1">Oui</option>
-            <option value="0">Non</option>
-          </select>
-        </div>
-        <div>
-          <label>Poids “préférence”</label><br/>
-          <input type="number" id="wPref" min="0" max="10" step="1" value="3">
-        </div>
-        <div>
-          <label>Poids “éviter garde”</label><br/>
-          <input type="number" id="wAvoid" min="0" max="20" step="1" value="12">
-        </div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="row">
-        <button id="btnComputeSlots">Générer slots</button>
-        <button id="btnAutoAssign">Auto-répartition</button>
-        <button class="ghost" id="btnExportAll">Exporter tout (JSON)</button>
-        <button class="ghost" id="btnImportAll">Importer tout (JSON)</button>
-        <button class="danger" id="btnResetAll">Reset global</button>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="title">Slots (générés) & affectations</div>
-      <div class="hint">Tu peux éditer à la main après auto-répartition (changement personne → recalcul points).</div>
-
-      <div class="list" id="slotList"></div>
-
-      <input type="file" id="fileImportAll" accept="application/json" style="display:none"/>
-    </div>
-
-    <div class="card">
-      <div class="title">Équité — points</div>
-      <div class="list" id="pointsBoard"></div>
-      <div class="hr"></div>
-      <div class="title">Notes</div>
-      <div class="hint">
-        Ce moteur est volontairement “sobre” : glouton équilibré, lisible, ajustable.
-        Si vous voulez du niveau “optimisation combinatoire” (min-cost flow / ILP), on peut upgrader.
-      </div>
-    </div>
-  </section>
-
-  <!-- VIEW 3 -->
-  <section id="view-result" class="grid" style="display:none">
-    <div class="card">
-      <div class="title">Résultat individuel</div>
-      <div class="row">
-        <div>
-          <label>Personne</label><br/>
-          <select id="resPerson"></select>
-        </div>
-        <div>
-          <label>Mois affiché</label><br/>
-          <input type="month" id="resMonth">
-        </div>
-        <button class="ghost" id="resPrev">◀</button>
-        <button class="ghost" id="resNext">▶</button>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="calHead">
-        <div class="row">
-          <div class="pill" id="resLabel">—</div>
-          <div class="pill" id="resPoints">—</div>
-          <div class="pill" id="resAlerts">—</div>
-        </div>
-      </div>
-
-      <div class="calGrid" id="resDOW"></div>
-      <div class="calGrid" id="resCal"></div>
-
-      <div class="legend">
-        <span class="pill">Garde = badge bleu</span>
-        <span class="pill">Récup = badge vert</span>
-        <span class="pill">Bloc consult = badge doré</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="title">Export</div>
-      <div class="row">
-        <button class="ghost" id="btnExportPersonPlan">Exporter planning personne (JSON)</button>
-      </div>
-      <div class="hr"></div>
-      <div class="title">Aperçu brut</div>
-      <textarea id="rawPreview" readonly></textarea>
-      <div class="hint">
-        Pour un export Excel/PDF : possible, mais il faut passer par un petit script (ou une lib) — je peux te le faire après.
-      </div>
-    </div>
-  </section>
-</div>
-
-<script>
-/* =============================
-   Storage
-============================= */
-const KEY = "GARDES_APP_V1";
-const DOW = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
-
-function todayISO(){
-  const d=new Date(); d.setHours(0,0,0,0);
-  return d.toISOString().slice(0,10);
-}
-function addDaysISO(iso, days){
-  const d=new Date(iso+"T00:00:00"); d.setDate(d.getDate()+days);
-  return d.toISOString().slice(0,10);
-}
-function ymFromISO(iso){ return iso.slice(0,7); }
-function monthToDate(ym){ return ym+"-01"; }
-function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-
-function loadState(){
-  const raw = localStorage.getItem(KEY);
-  if(raw){
-    try { return JSON.parse(raw); } catch(e){}
-  }
-  // Defaults
-  const t = todayISO();
-  return {
-    people: [
-      { id: "p1", name:"A. Bruno", fte:1.0, wishLeaves:0, pref:{} },
-      { id: "p2", name:"C. Insalaco", fte:1.0, wishLeaves:0, pref:{} },
-      { id: "p3", name:"C. Claes", fte:1.0, wishLeaves:0, pref:{} }
-    ],
-    // pref[iso] = { tag: "none|avoid_guard|prefer_guard|avoid_leave|block_consult" }
-    admin: {
-      slots: [], // {date,type,role,assignedPersonId,points}
-      assignmentsVersion: 0
-    }
-  };
-}
-function saveState(){
-  localStorage.setItem(KEY, JSON.stringify(state));
-}
-let state = loadState();
-
-/* =============================
-   Holidays Belgium (national)
-   - computed without internet
-============================= */
-// Easter algorithm (Anonymous Gregorian)
-function easterDate(year){
-  const a = year % 19;
-  const b = Math.floor(year/100);
-  const c = year % 100;
-  const d = Math.floor(b/4);
-  const e = b % 4;
-  const f = Math.floor((b+8)/25);
-  const g = Math.floor((b-f+1)/3);
-  const h = (19*a + b - d - g + 15) % 30;
-  const i = Math.floor(c/4);
-  const k = c % 4;
-  const l = (32 + 2*e + 2*i - h - k) % 7;
-  const m = Math.floor((a + 11*h + 22*l)/451);
-  const month = Math.floor((h + l - 7*m + 114)/31); // 3=March, 4=April
-  const day = ((h + l - 7*m + 114) % 31) + 1;
-  return new Date(Date.UTC(year, month-1, day));
-}
-function isoUTC(d){
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString().slice(0,10);
-}
-function belgiumHolidays(year){
-  const E = easterDate(year);
-  const holidays = [];
-  // Fixed dates
-  holidays.push({date:`${year}-01-01`, name:"Nouvel An"});
-  holidays.push({date:`${year}-05-01`, name:"Fête du Travail"});
-  holidays.push({date:`${year}-07-21`, name:"Fête nationale"});
-  holidays.push({date:`${year}-08-15`, name:"Assomption"});
-  holidays.push({date:`${year}-11-01`, name:"Toussaint"});
-  holidays.push({date:`${year}-11-11`, name:"Armistice"});
-  holidays.push({date:`${year}-12-25`, name:"Noël"});
-  // Movable (based on Easter)
-  const easterMon = new Date(E); easterMon.setUTCDate(easterMon.getUTCDate()+1);
-  holidays.push({date:isoUTC(easterMon), name:"Lundi de Pâques"});
-  const asc = new Date(E); asc.setUTCDate(asc.getUTCDate()+39);
-  holidays.push({date:isoUTC(asc), name:"Ascension"});
-  const whitMon = new Date(E); whitMon.setUTCDate(whitMon.getUTCDate()+50);
-  holidays.push({date:isoUTC(whitMon), name:"Lundi de Pentecôte"});
-  // Note: certains services ajoutent 26/12 ou autres usages locaux → à ajouter si besoin.
-  return holidays;
-}
-function buildHolidayMapForRange(startISO,endISO){
-  const y1 = Number(startISO.slice(0,4));
-  const y2 = Number(endISO.slice(0,4));
-  const map = {};
-  for(let y=y1; y<=y2; y++){
-    for(const h of belgiumHolidays(y)){
-      map[h.date]=h.name;
-    }
-  }
-  return map;
-}
-
-/* =============================
-   Guard slots & points rules
-   Types (simple MVP):
-   - weekday_night (18-9)
-   - weekend_day (8-18)
-   - weekend_night (18-8)
-   - holiday_day / holiday_night (same as weekend)
-============================= */
-function isWeekend(iso){
-  const d=new Date(iso+"T00:00:00");
-  const wd = (d.getDay()+6)%7; // Mon=0..Sun=6
-  return wd>=5;
-}
-function weekdayIndex(iso){
-  const d=new Date(iso+"T00:00:00");
-  return (d.getDay()+6)%7;
-}
-function isHoliday(iso, holMap){ return !!holMap[iso]; }
-
-function pointsForSlot(slot){
-  // slot.type in: weekday_night, weekend_day, weekend_night, holiday_day, holiday_night
-  // Based on your rules mapping (MVP approximation):
-  // - weekday_night Mon-Thu => 1
-  // - weekday_night Fri => 2
-  // - weekend_day/night => 2
-  // - holiday_day => 2
-  // - holiday_night => 1.5 if next day is weekday else 2 (approx)
-  if(slot.type==="weekday_night"){
-    const wd = weekdayIndex(slot.date);
-    if(wd===4) return 2.0; // Friday night guard
-    return 1.0; // Mon-Thu
-  }
-  if(slot.type==="weekend_day" || slot.type==="weekend_night") return 2.0;
-  if(slot.type==="holiday_day") return 2.0;
-  if(slot.type==="holiday_night"){
-    const next = addDaysISO(slot.date,1);
-    const wd = weekdayIndex(next);
-    if(wd<=4) return 1.5;
-    return 2.0;
-  }
-  return 0.0;
-}
-
-function generateSlots(startISO,endISO){
-  const holMap = buildHolidayMapForRange(startISO,endISO);
-  const slots=[];
-  let cur=startISO;
-  while(cur<=endISO){
-    const weekend = isWeekend(cur);
-    const holiday = isHoliday(cur, holMap);
-
-    if(holiday || weekend){
-      // split day+night
-      slots.push({date:cur, type: holiday ? "holiday_day":"weekend_day", role:"G1", assigned:null, points:0});
-      slots.push({date:cur, type: holiday ? "holiday_night":"weekend_night", role:"G1", assigned:null, points:0});
-    } else {
-      // weekday night
-      slots.push({date:cur, type:"weekday_night", role:"G1", assigned:null, points:0});
-    }
-    cur = addDaysISO(cur,1);
-  }
-  // compute points
-  for(const s of slots){ s.points = pointsForSlot(s); }
-  return {slots, holMap};
-}
-
-/* =============================
-   Preferences model per person
-   pref[date] = "none" | "avoid_guard" | "prefer_guard" | "avoid_leave" | "block_consult"
-============================= */
-function getPersonById(id){ return state.people.find(p=>p.id===id); }
-function getPersonByName(name){ return state.people.find(p=>p.name===name); }
-function ensurePersonPrefs(p){ if(!p.pref) p.pref = {}; }
-function getTag(p, iso){ ensurePersonPrefs(p); return p.pref[iso] || "none"; }
-function setTag(p, iso, tag){
-  ensurePersonPrefs(p);
-  if(tag==="none") delete p.pref[iso];
-  else p.pref[iso]=tag;
-}
-const TAG_CYCLE = ["none","avoid_guard","prefer_guard","avoid_leave","block_consult"];
-
-function tagLabel(tag){
-  switch(tag){
-    case "avoid_guard": return "Éviter garde";
-    case "prefer_guard": return "Préférer garde";
-    case "avoid_leave": return "Éviter congé";
-    case "block_consult": return "Bloc consult";
-    default: return "Libre";
-  }
-}
-
-/* =============================
-   Auto assignment (greedy balanced)
-============================= */
-function personPoints(personId){
-  let sum=0;
-  for(const s of state.admin.slots){
-    if(s.assigned===personId) sum += (s.points||0);
-  }
-  return sum;
-}
-function hasAssignmentOn(personId, iso){
-  return state.admin.slots.some(s=>s.assigned===personId && s.date===iso);
-}
-function hasAssignmentNear(personId, iso){
-  // check day-1 and day+1
-  const d0 = addDaysISO(iso,-1);
-  const d1 = addDaysISO(iso, 1);
-  return state.admin.slots.some(s=>s.assigned===personId && (s.date===d0 || s.date===d1));
-}
-function isUnavailableFor(person, iso){
-  const tag = getTag(person, iso);
-  // "avoid_guard" is not absolute unavailable, but strong penalty; absolute unavailable can be modeled later
-  // For MVP: treat avoid_guard as still possible but discouraged.
-  // If you want "never": create tag "unavailable".
-  return false;
-}
-function scoreCandidate(person, slot, opts){
-  // lower score = better
-  const currentPts = personPoints(person.id);
-  let score = currentPts * 1.0;
-
-  const tag = getTag(person, slot.date);
-  if(tag==="prefer_guard") score -= (opts.wPref||3);
-  if(tag==="avoid_guard") score += (opts.wAvoid||12);
-
-  // discourage if block consult on that day (means they'd like to keep consult stable)
-  if(tag==="block_consult") score += 8;
-
-  // avoid back-to-back if option
-  if(opts.avoidBack && hasAssignmentNear(person.id, slot.date)) score += 50;
-
-  return score;
-}
-
-function autoAssign(startISO,endISO, opts){
-  // Make sure slots exist for that period
-  if(!state.admin.slots.length){
-    const gen = generateSlots(startISO,endISO);
-    state.admin.slots = gen.slots;
-  }
-
-  // clear assignments in range only (keep others if outside)
-  for(const s of state.admin.slots){
-    if(s.date>=startISO && s.date<=endISO){
-      s.assigned = null;
-    }
-  }
-
-  // Greedy: sort slots by "difficulty" (holidays/weekends first, higher points first)
-  const slots = state.admin.slots
-    .filter(s=>s.date>=startISO && s.date<=endISO)
-    .slice()
-    .sort((a,b)=> (b.points - a.points) || (a.date.localeCompare(b.date)));
-
-  for(const slot of slots){
-    // candidates = everyone for MVP (later: exclude vacations, etc.)
-    let bestId=null, bestScore=Infinity;
-    for(const p of state.people){
-      if(isUnavailableFor(p, slot.date)) continue;
-      if(hasAssignmentOn(p.id, slot.date)) continue; // only one slot per day per person for now
-
-      const sc = scoreCandidate(p, slot, opts);
-      if(sc < bestScore){ bestScore=sc; bestId=p.id; }
-    }
-    slot.assigned = bestId; // if null => unfilled
-  }
-
-  state.admin.assignmentsVersion++;
-  saveState();
-}
-
-/* =============================
-   Recup computation (MVP)
-   - any night slot assigned => recup next day
-============================= */
-function isNightSlot(slot){
-  return slot.type==="weekday_night" || slot.type==="weekend_night" || slot.type==="holiday_night";
-}
-function computeRecupForPerson(personId){
-  const recups = new Set();
-  for(const s of state.admin.slots){
-    if(s.assigned===personId && isNightSlot(s)){
-      recups.add(addDaysISO(s.date,1));
-    }
-  }
-  return recups;
-}
-
-/* =============================
-   UI binding
-============================= */
-const el = id => document.getElementById(id);
-
-function setTabs(){
-  document.querySelectorAll(".tab").forEach(t=>{
-    t.onclick=()=>{
-      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-      t.classList.add("active");
-      const v=t.dataset.view;
-      el("view-desiderata").style.display = (v==="desiderata")?"grid":"none";
-      el("view-admin").style.display      = (v==="admin")?"grid":"none";
-      el("view-result").style.display     = (v==="result")?"grid":"none";
-      if(v==="admin"){ renderAdmin(); }
-      if(v==="result"){ renderResult(); }
-    };
-  });
-}
-
-function initPeopleSelects(){
-  const sel = el("selPerson");
-  const res = el("resPerson");
-  sel.innerHTML=""; res.innerHTML="";
-  for(const p of state.people){
-    const o=document.createElement("option"); o.value=p.id; o.textContent=p.name; sel.appendChild(o);
-    const o2=document.createElement("option"); o2.value=p.id; o2.textContent=p.name; res.appendChild(o2);
-  }
-}
-
-function setDefaultDates(){
-  const t = todayISO();
-  el("rangeStart").value = t;
-  el("rangeEnd").value = addDaysISO(t, 60);
-  el("admStart").value = t;
-  el("admEnd").value = addDaysISO(t, 60);
-
-  const ym = ymFromISO(t);
-  el("monthPick").value = ym;
-  el("resMonth").value = ym;
-}
-
-function renderDOW(targetId){
-  const cont = el(targetId);
-  cont.innerHTML="";
-  for(const d of DOW){
-    const x=document.createElement("div");
-    x.className="dow"; x.textContent=d;
-    cont.appendChild(x);
-  }
-}
-
-function monthLabel(ym){
-  const [y,m]=ym.split("-").map(Number);
-  const names=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-  return `${names[m-1]} ${y}`;
-}
-
-function buildMonthDays(ym){
-  const first = new Date(ym+"-01T00:00:00");
-  const y=first.getFullYear(), m=first.getMonth();
-  const startWd = (first.getDay()+6)%7; // Mon=0
-  const daysInMonth = new Date(y, m+1, 0).getDate();
-  const cells = [];
-  // pad before
-  for(let i=0;i<startWd;i++) cells.push(null);
-  for(let d=1; d<=daysInMonth; d++){
-    const iso = new Date(y, m, d).toISOString().slice(0,10);
-    cells.push(iso);
-  }
-  // pad after to complete weeks
-  while(cells.length%7!==0) cells.push(null);
-  return cells;
-}
-
-function renderDesiderata(){
-  const pid = el("selPerson").value;
-  const p = getPersonById(pid);
-  if(!p) return;
-
-  // sync params
-  el("fte").value = p.fte ?? 1.0;
-  el("wishLeaves").value = p.wishLeaves ?? 0;
-
-  const startISO = el("rangeStart").value || todayISO();
-  const endISO = el("rangeEnd").value || addDaysISO(startISO,60);
-  const holMap = buildHolidayMapForRange(startISO,endISO);
-
-  const ym = el("monthPick").value || ymFromISO(todayISO());
-  el("calLabel").textContent = monthLabel(ym);
-
-  const monthCells = buildMonthDays(ym);
-  const holCount = Object.keys(holMap).filter(d=>d.startsWith(ym)).length;
-  el("holCount").textContent = `Fériés (période) : ${Object.keys(holMap).length} — ce mois: ${holCount}`;
-
-  const cal = el("cal");
-  cal.innerHTML="";
-
-  const t = todayISO();
-  for(const iso of monthCells){
-    const box=document.createElement("div");
-    box.className="day";
-    if(!iso){
-      box.style.opacity=.35; box.style.cursor="default";
-      cal.appendChild(box);
-      continue;
-    }
-
-    const tag = getTag(p, iso);
-    if(tag==="avoid_guard") box.classList.add("off");
-    if(tag==="prefer_guard") box.classList.add("pref");
-    if(isHoliday(iso, holMap)) box.classList.add("hol");
-    if(iso===t) box.classList.add("today");
-
-    const n=document.createElement("div");
-    n.className="n";
-    n.textContent = iso.slice(8,10);
-
-    const badges=document.createElement("div");
-    badges.className="badges";
-
-    if(isHoliday(iso, holMap)){
-      const b=document.createElement("span");
-      b.className="b note";
-      b.textContent = holMap[iso];
-      badges.appendChild(b);
-    }
-    if(tag!=="none"){
-      const b=document.createElement("span");
-      b.className="b note";
-      b.textContent = tagLabel(tag);
-      badges.appendChild(b);
-    }
-
-    box.appendChild(n);
-    box.appendChild(badges);
-
-    box.onclick=()=>{
-      // only within editable range? keep simple: allow all
-      const cur = getTag(p, iso);
-      const idx = TAG_CYCLE.indexOf(cur);
-      const next = TAG_CYCLE[(idx+1)%TAG_CYCLE.length];
-      setTag(p, iso, next);
-      saveState();
-      renderDesiderata();
-      renderPrefSummary();
+  <!-- Libs -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.3/standalone/umd/vis-timeline-graph2d.min.js"></script>
+
+  <script>
+    /************************************************************
+      State + persistence
+    *************************************************************/
+    const LS_KEY = "gardes_console_v1";
+    const state = {
+      persons: [],     // {id,label,quota,color}
+      events: [],      // {id,type,personId,start,end,note,meta}
+      viewStart: startOfMonth(new Date()),   // anchor for 3-month view
+      settings: {
+        theme: "dark",
+        showHolidays: true,
+        showRecup: true,
+        showHalf: true
+      }
     };
 
-    cal.appendChild(box);
-  }
-
-  renderPrefSummary();
-}
-
-function renderPrefSummary(){
-  const pid = el("selPerson").value;
-  const p = getPersonById(pid);
-  const list = el("prefSummary");
-  list.innerHTML="";
-
-  const counts = {avoid_guard:0, prefer_guard:0, avoid_leave:0, block_consult:0};
-  for(const d in (p.pref||{})){
-    const t=p.pref[d];
-    if(counts[t]!==undefined) counts[t]++;
-  }
-
-  const mk = (k,v)=>{
-    const it=document.createElement("div"); it.className="item";
-    const meta=document.createElement("div"); meta.className="meta";
-    const kk=document.createElement("div"); kk.className="k"; kk.textContent=k;
-    const vv=document.createElement("div"); vv.className="v"; vv.textContent=v;
-    meta.appendChild(kk); meta.appendChild(vv);
-    it.appendChild(meta);
-    return it;
-  };
-
-  list.appendChild(mk("Mi-temps / FTE", String(p.fte ?? 1.0)));
-  list.appendChild(mk("Congés souhaités (période)", String(p.wishLeaves ?? 0)));
-  list.appendChild(mk("Jours « éviter garde »", String(counts.avoid_guard)));
-  list.appendChild(mk("Jours « préférer garde »", String(counts.prefer_guard)));
-  list.appendChild(mk("Jours « éviter congé »", String(counts.avoid_leave)));
-  list.appendChild(mk("Jours « bloc consultations »", String(counts.block_consult)));
-}
-
-/* ============ Admin view ============ */
-function renderAdmin(){
-  renderSlotList();
-  renderPointsBoard();
-}
-
-function slotLabel(s){
-  const map = {
-    weekday_night: "Semaine (nuit 18-9)",
-    weekend_day: "Week-end (jour 8-18)",
-    weekend_night: "Week-end (nuit 18-8)",
-    holiday_day: "Férié (jour 8-18)",
-    holiday_night: "Férié (nuit 18-8)"
-  };
-  return map[s.type] || s.type;
-}
-
-function renderSlotList(){
-  const list = el("slotList");
-  list.innerHTML="";
-  const slots = state.admin.slots.slice().sort((a,b)=>a.date.localeCompare(b.date) || a.type.localeCompare(b.type));
-  for(const s of slots){
-    const it=document.createElement("div"); it.className="item";
-    const meta=document.createElement("div"); meta.className="meta";
-    meta.innerHTML = `
-      <div class="k">${s.date}</div>
-      <div class="v">${slotLabel(s)} <span class="mono">(${s.points} pts)</span></div>
-    `;
-    const right=document.createElement("div"); right.style.display="flex"; right.style.gap="8px"; right.style.alignItems="center";
-
-    const sel=document.createElement("select");
-    const empty=document.createElement("option"); empty.value=""; empty.textContent="— non attribué —";
-    sel.appendChild(empty);
-    for(const p of state.people){
-      const o=document.createElement("option"); o.value=p.id; o.textContent=p.name;
-      if(s.assigned===p.id) o.selected=true;
-      sel.appendChild(o);
+    function uid(prefix="id"){
+      return prefix + "_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
     }
-    sel.onchange=()=>{
-      s.assigned = sel.value || null;
-      state.admin.assignmentsVersion++;
-      saveState();
-      renderPointsBoard();
+
+    function save(){
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      refreshKPIs();
+    }
+
+    function load(){
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return false;
+      try{
+        const obj = JSON.parse(raw);
+        if(obj && typeof obj === "object"){
+          Object.assign(state, obj);
+          return true;
+        }
+      }catch(e){}
+      return false;
+    }
+
+    function hardReset(){
+      state.persons = [];
+      state.events = [];
+      state.viewStart = startOfMonth(new Date());
+      state.settings = { theme:"dark", showHolidays:true, showRecup:true, showHalf:true };
+      localStorage.removeItem(LS_KEY);
+      applyTheme();
+      applyTogglesFromState();
+      renderAll();
+    }
+
+    /************************************************************
+      Date helpers
+    *************************************************************/
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function toISODate(d){
+      const dt = new Date(d);
+      return dt.getFullYear()+"-"+pad2(dt.getMonth()+1)+"-"+pad2(dt.getDate());
+    }
+    function startOfMonth(d){
+      const dt = new Date(d);
+      return new Date(dt.getFullYear(), dt.getMonth(), 1);
+    }
+    function addMonths(d, n){
+      const dt = new Date(d);
+      return new Date(dt.getFullYear(), dt.getMonth()+n, 1);
+    }
+    function endOfMonth(d){
+      const dt = new Date(d);
+      return new Date(dt.getFullYear(), dt.getMonth()+1, 0);
+    }
+    function addDays(d, n){
+      const dt = new Date(d);
+      dt.setDate(dt.getDate()+n);
+      return dt;
+    }
+    function sameDay(a,b){
+      const A = new Date(a), B = new Date(b);
+      return A.getFullYear()===B.getFullYear() && A.getMonth()===B.getMonth() && A.getDate()===B.getDate();
+    }
+
+    function frenchMonthTitle(d){
+      return new Date(d).toLocaleDateString("fr-BE",{month:"long", year:"numeric"}).replace(/^\w/, c=>c.toUpperCase());
+    }
+
+    /************************************************************
+      Belgian legal holidays (national) for a given year
+      - Fixed: 1/1, 1/5, 21/7, 15/8, 1/11, 11/11, 25/12
+      - Movable: Easter Monday, Ascension, Whit Monday
+      NOTE: This is *legal holiday list*. “Jour de remplacement” depends on employer/sector.
+    *************************************************************/
+    function easterDate(year){
+      // Anonymous Gregorian algorithm (Meeus/Jones/Butcher)
+      const a = year % 19;
+      const b = Math.floor(year/100);
+      const c = year % 100;
+      const d = Math.floor(b/4);
+      const e = b % 4;
+      const f = Math.floor((b+8)/25);
+      const g = Math.floor((b - f + 1)/3);
+      const h = (19*a + b - d - g + 15) % 30;
+      const i = Math.floor(c/4);
+      const k = c % 4;
+      const l = (32 + 2*e + 2*i - h - k) % 7;
+      const m = Math.floor((a + 11*h + 22*l)/451);
+      const month = Math.floor((h + l - 7*m + 114)/31); // 3=March,4=April
+      const day = ((h + l - 7*m + 114) % 31) + 1;
+      return new Date(year, month-1, day);
+    }
+
+    function belgianHolidays(year){
+      const E = easterDate(year);
+      const easterMonday = addDays(E, 1);
+      const ascension = addDays(E, 39);
+      const whitMonday = addDays(E, 50);
+
+      const fixed = [
+        { date: new Date(year,0,1), name:"Nouvel An" },
+        { date: new Date(year,4,1), name:"Fête du Travail" },
+        { date: new Date(year,6,21), name:"Fête nationale" },
+        { date: new Date(year,7,15), name:"Assomption" },
+        { date: new Date(year,10,1), name:"Toussaint" },
+        { date: new Date(year,10,11), name:"Armistice" },
+        { date: new Date(year,11,25), name:"Noël" },
+      ];
+      const movable = [
+        { date: easterMonday, name:"Lundi de Pâques" },
+        { date: ascension, name:"Ascension" },
+        { date: whitMonday, name:"Lundi de Pentecôte" },
+      ];
+      return fixed.concat(movable).sort((a,b)=>a.date-b.date);
+    }
+
+    /************************************************************
+      Event styling + derived events
+    *************************************************************/
+    const TYPE_META = {
+      g1_week:    { label:"G1 semaine (nuit)", colorVar:"--g1", kind:"guard", line:"G1" },
+      g1_we_day:  { label:"G1 WE/JF (jour)",   colorVar:"--g1", kind:"guard", line:"G1" },
+      g1_we_night:{ label:"G1 WE/JF (nuit)",   colorVar:"--g1", kind:"guard", line:"G1" },
+
+      g2_week:    { label:"G2 semaine",        colorVar:"--g2", kind:"guard", line:"G2" },
+      g2_weekend: { label:"G2 WE/JF",          colorVar:"--g2", kind:"guard", line:"G2" },
+
+      leave:      { label:"Congé",             colorVar:"--leave", kind:"leave" },
+
+      half_am:    { label:"Mi-temps AM",       colorVar:"--am", kind:"half" },
+      half_pm:    { label:"Mi-temps PM",       colorVar:"--pm", kind:"half" },
+
+      note:       { label:"Note / formation",  colorVar:"--muted", kind:"note" },
+
+      holiday:    { label:"Férié légal BE",    colorVar:"--holiday", kind:"holiday", system:true },
+      recup:      { label:"Récup (auto)",      colorVar:"--good", kind:"recup", system:true },
     };
 
-    right.appendChild(sel);
-    it.appendChild(meta);
-    it.appendChild(right);
-    list.appendChild(it);
-  }
+    function cssVar(name){ return getComputedStyle(document.body).getPropertyValue(name).trim(); }
 
-  if(!slots.length){
-    const it=document.createElement("div"); it.className="hint";
-    it.textContent="Aucun slot. Clique « Générer slots ».";
-    list.appendChild(it);
-  }
-}
+    function personById(id){ return state.persons.find(p=>p.id===id) || null; }
 
-function renderPointsBoard(){
-  const board = el("pointsBoard");
-  board.innerHTML="";
-  const rows = state.people.map(p=>{
-    return {name:p.name, id:p.id, points: personPoints(p.id)};
-  }).sort((a,b)=>a.points-b.points);
-
-  const min = rows.length? rows[0].points : 0;
-  const max = rows.length? rows[rows.length-1].points : 0;
-
-  for(const r of rows){
-    const it=document.createElement("div"); it.className="item";
-    const meta=document.createElement("div"); meta.className="meta";
-    const spread = (max-min)||1;
-    const ratio = (r.points-min)/spread;
-    meta.innerHTML = `
-      <div class="k">${r.name}</div>
-      <div class="v">${r.points.toFixed(1)} points <span class="mono">(${ratio.toFixed(2)} eq)</span></div>
-    `;
-    it.appendChild(meta);
-    board.appendChild(it);
-  }
-}
-
-/* ============ Result view ============ */
-function renderResult(){
-  const pid = el("resPerson").value || state.people[0]?.id;
-  const ym = el("resMonth").value || ymFromISO(todayISO());
-  el("resLabel").textContent = monthLabel(ym);
-
-  const monthCells = buildMonthDays(ym);
-
-  // holidays for month range (just use that year)
-  const y = Number(ym.split("-")[0]);
-  const holMap = {};
-  for(const h of belgiumHolidays(y)) holMap[h.date]=h.name;
-
-  const slotsByDate = {};
-  for(const s of state.admin.slots){
-    if(!slotsByDate[s.date]) slotsByDate[s.date]=[];
-    slotsByDate[s.date].push(s);
-  }
-
-  const recups = computeRecupForPerson(pid);
-  const p = getPersonById(pid);
-
-  // points
-  const pts = personPoints(pid);
-
-  // alerts: days where recup collides with "block_consult" tag
-  let alertCount=0;
-
-  const cal = el("resCal");
-  cal.innerHTML="";
-  const t=todayISO();
-
-  for(const iso of monthCells){
-    const box=document.createElement("div");
-    box.className="day";
-    if(!iso){
-      box.style.opacity=.35; box.style.cursor="default";
-      cal.appendChild(box);
-      continue;
-    }
-    if(iso===t) box.classList.add("today");
-    if(isHoliday(iso, holMap)) box.classList.add("hol");
-
-    const n=document.createElement("div");
-    n.className="n";
-    n.textContent = iso.slice(8,10);
-
-    const badges=document.createElement("div");
-    badges.className="badges";
-
-    // assigned guards
-    const daySlots = (slotsByDate[iso]||[]).filter(s=>s.assigned===pid);
-    for(const s of daySlots){
-      const b=document.createElement("span");
-      b.className="b garde";
-      b.textContent = `Garde: ${s.type.replace("_"," ")}`;
-      badges.appendChild(b);
+    function normalizeEvent(e){
+      // Ensure end exists for all-day usage. FullCalendar treats end as exclusive.
+      const start = new Date(e.start);
+      let end = e.end ? new Date(e.end) : new Date(e.start);
+      // If end is same day, keep single day event -> end exclusive next day for calendar blocks.
+      if (sameDay(start, end)) end = addDays(end, 1);
+      return {...e, start: toISODate(start), end: toISODate(end)};
     }
 
-    // recup
-    if(recups.has(iso)){
-      const b=document.createElement("span");
-      b.className="b recup";
-      b.textContent = "Récup";
-      badges.appendChild(b);
+    function derivedSystemEvents(){
+      const sys = [];
+
+      // Holidays across the 3-month window (plus buffer)
+      const start = state.viewStart;
+      const end = endOfMonth(addMonths(state.viewStart, 2));
+      const years = new Set([start.getFullYear(), end.getFullYear()]);
+      if(state.settings.showHolidays){
+        years.forEach(y=>{
+          belgianHolidays(y).forEach(h=>{
+            if(h.date >= addDays(start,-7) && h.date <= addDays(end,7)){
+              sys.push({
+                id: "hol_"+toISODate(h.date),
+                type:"holiday",
+                personId:null,
+                start: toISODate(h.date),
+                end: toISODate(addDays(h.date,1)),
+                note: h.name,
+                meta:{ name:h.name }
+              });
+            }
+          });
+        });
+      }
+
+      // Recup: for g1_week (nuit) + g1_we_night -> next day
+      if(state.settings.showRecup){
+        state.events.forEach(ev=>{
+          if(ev.type === "g1_week" || ev.type === "g1_we_night"){
+            const sd = new Date(ev.start);
+            const rec = addDays(sd, 1);
+            sys.push({
+              id: "rec_"+ev.id,
+              type:"recup",
+              personId: ev.personId,
+              start: toISODate(rec),
+              end: toISODate(addDays(rec,1)),
+              note: "Récup (auto)",
+              meta:{ source: ev.id }
+            });
+          }
+        });
+      }
+
+      // Hide half-times if toggle off
+      // (handled by filtering base events in buildDisplayEvents)
+
+      return sys;
     }
 
-    // block consult preference
-    const tag = getTag(p, iso);
-    if(tag==="block_consult"){
-      const b=document.createElement("span");
-      b.className="b bloc";
-      b.textContent = "Bloc consult";
-      badges.appendChild(b);
-      // alert if also recup (means: must block consult in real life)
-      if(recups.has(iso)) alertCount++;
+    function buildDisplayEvents(){
+      // base + derived system events
+      const base = state.events
+        .map(normalizeEvent)
+        .filter(ev=>{
+          if(!state.settings.showHalf && (ev.type==="half_am" || ev.type==="half_pm")) return false;
+          return true;
+        });
+
+      const sys = derivedSystemEvents().map(normalizeEvent);
+
+      return base.concat(sys);
     }
 
-    // holiday label (optional)
-    if(isHoliday(iso, holMap)){
-      const b=document.createElement("span");
-      b.className="b note";
-      b.textContent = holMap[iso];
-      badges.appendChild(b);
+    /************************************************************
+      Rendering: people list + calendars + timeline + coverage
+    *************************************************************/
+    const els = {};
+    function cacheEls(){
+      [
+        "personList","btnSavePerson","pLabel","pQuota","pColor","kPersons","kEvents","kRange",
+        "btnAddEvent","modalBack","btnCloseModal","eType","ePerson","eStart","eEnd","eNote",
+        "btnSaveEvent","btnDeleteEvent","modalTitle","btnAddPerson","btnReset",
+        "btnExportJSON","btnImportJSON","btnExportICS","ioBox",
+        "btnTheme","tglHolidays","tglRecup","tglHalf",
+        "btnToday","btnPrev","btnNext","rangeTitle","m1Title","m2Title","m3Title",
+        "coverageBody","btnPropose","kSugLeave","kSugGuard","suggestBox"
+      ].forEach(id=>els[id]=document.getElementById(id));
+
+      // tabs
+      document.querySelectorAll(".tab").forEach(t=>{
+        t.addEventListener("click", ()=>{
+          document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+          t.classList.add("active");
+          const v = t.getAttribute("data-view");
+          setView(v);
+        });
+      });
     }
 
-    box.appendChild(n);
-    box.appendChild(badges);
-    cal.appendChild(box);
-  }
+    function applyTheme(){
+      document.body.setAttribute("data-theme", state.settings.theme);
+      els.btnTheme.textContent = (state.settings.theme==="dark") ? "☼" : "☾";
+      // re-render visuals (colors)
+      renderAll();
+    }
 
-  el("resPoints").textContent = `Points: ${pts.toFixed(1)}`;
-  el("resAlerts").textContent = `Alertes (récup + bloc consult): ${alertCount}`;
+    function applyTogglesFromState(){
+      els.tglHolidays.checked = !!state.settings.showHolidays;
+      els.tglRecup.checked = !!state.settings.showRecup;
+      els.tglHalf.checked = !!state.settings.showHalf;
+    }
 
-  // Raw preview
-  const raw = {
-    person: p.name,
-    points: pts,
-    recup: Array.from(recups).sort(),
-    assignments: state.admin.slots.filter(s=>s.assigned===pid).sort((a,b)=>a.date.localeCompare(b.date)),
-    prefs: p.pref || {}
-  };
-  el("rawPreview").value = JSON.stringify(raw, null, 2);
-}
+    function refreshKPIs(){
+      els.kPersons.textContent = state.persons.length;
+      els.kEvents.textContent = state.events.length;
+      const start = state.viewStart;
+      const end = endOfMonth(addMonths(state.viewStart, 2));
+      els.kRange.textContent = `${toISODate(start)} → ${toISODate(end)}`;
+      els.rangeTitle.textContent = `${frenchMonthTitle(start)} — ${frenchMonthTitle(end)}`;
+      const title = `${frenchMonthTitle(start)} → ${frenchMonthTitle(end)}`;
+      els.rangeTitle.textContent = title;
+    }
 
-/* =============================
-   Events
-============================= */
-setTabs();
-initPeopleSelects();
-setDefaultDates();
-renderDOW("calDOW");
-renderDOW("resDOW");
+    function renderPeople(){
+      const wrap = els.personList;
+      wrap.innerHTML = "";
 
-// Desiderata bindings
-el("selPerson").onchange = () => renderDesiderata();
-el("monthPick").onchange = () => renderDesiderata();
-el("rangeStart").onchange = () => renderDesiderata();
-el("rangeEnd").onchange = () => renderDesiderata();
+      state.persons.forEach(p=>{
+        const div = document.createElement("div");
+        div.className = "personItem";
+        div.innerHTML = `
+          <div class="personLeft">
+            <div class="dot" style="background:${p.color}"></div>
+            <div class="mini">
+              <div class="personName">${escapeHtml(p.label)}</div>
+              <div class="personMeta">Quotité: ${p.quota}</div>
+            </div>
+          </div>
+          <div class="row" style="gap:6px;">
+            <button class="iconBtn" title="Filtrer sur cette personne" data-act="filter">⟡</button>
+            <button class="iconBtn" title="Éditer" data-act="edit">✎</button>
+            <button class="iconBtn" title="Supprimer" data-act="del">🗑</button>
+          </div>
+        `;
+        div.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+          if(!confirm(`Supprimer ${p.label} ? (Événements associés conservés, mais non assignés)`)) return;
+          // Unassign events
+          state.events = state.events.map(ev=> ev.personId===p.id ? {...ev, personId:null} : ev);
+          state.persons = state.persons.filter(x=>x.id!==p.id);
+          save();
+          renderAll();
+        });
+        div.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+          els.pLabel.value = p.label;
+          els.pQuota.value = String(p.quota);
+          els.pColor.value = p.color;
+          els.btnSavePerson.textContent = "Mettre à jour";
+          els.btnSavePerson.dataset.editId = p.id;
+        });
+        div.querySelector('[data-act="filter"]').addEventListener("click", ()=>{
+          // simple filter: open modal add event preselect person
+          openEventModal(null, p.id);
+        });
 
-el("prevMonth").onclick = () => {
-  const cur = el("monthPick").value;
-  const d = new Date(cur+"-01T00:00:00");
-  d.setMonth(d.getMonth()-1);
-  el("monthPick").value = d.toISOString().slice(0,7);
-  renderDesiderata();
-};
-el("nextMonth").onclick = () => {
-  const cur = el("monthPick").value;
-  const d = new Date(cur+"-01T00:00:00");
-  d.setMonth(d.getMonth()+1);
-  el("monthPick").value = d.toISOString().slice(0,7);
-  renderDesiderata();
-};
-el("btnToday").onclick = () => {
-  el("monthPick").value = ymFromISO(todayISO());
-  renderDesiderata();
-};
+        wrap.appendChild(div);
+      });
 
-el("fte").onchange = () => {
-  const p=getPersonById(el("selPerson").value);
-  p.fte = Number(el("fte").value||1.0);
-  saveState(); renderPrefSummary();
-};
-el("wishLeaves").onchange = () => {
-  const p=getPersonById(el("selPerson").value);
-  p.wishLeaves = Number(el("wishLeaves").value||0);
-  saveState(); renderPrefSummary();
-};
+      // Update person select in event modal
+      fillPersonSelect();
+    }
 
-el("btnSave").onclick = () => { saveState(); renderDesiderata(); };
+    let cals = { cal1:null, cal2:null, cal3:null };
+    function destroyCalendars(){
+      Object.values(cals).forEach(cal=>{ if(cal) cal.destroy(); });
+      cals = { cal1:null, cal2:null, cal3:null };
+    }
 
-el("btnResetMe").onclick = () => {
-  const p=getPersonById(el("selPerson").value);
-  if(!confirm("Reset personne (prefs + paramètres) ?")) return;
-  p.pref = {};
-  p.fte = 1.0;
-  p.wishLeaves = 0;
-  saveState();
-  renderDesiderata();
-};
+    function calendarEventsForMonth(monthStart){
+      const display = buildDisplayEvents();
+      const start = startOfMonth(monthStart);
+      const end = endOfMonth(monthStart);
 
-el("btnExportMe").onclick = () => {
-  const p=getPersonById(el("selPerson").value);
-  const data = { person: p, exportedAt: new Date().toISOString() };
-  downloadJSON(data, `desiderata_${p.name.replace(/\s+/g,"_")}.json`);
-};
-el("btnImportMe").onclick = () => el("fileImportMe").click();
-el("fileImportMe").onchange = async (ev) => {
-  const f = ev.target.files[0]; if(!f) return;
-  const txt = await f.text();
-  const data = JSON.parse(txt);
-  if(!data.person || !data.person.id) { alert("JSON invalide."); return; }
-  // merge by id if exists
-  const idx = state.people.findIndex(x=>x.id===data.person.id);
-  if(idx>=0) state.people[idx] = data.person;
-  else state.people.push(data.person);
-  saveState();
-  initPeopleSelects();
-  renderDesiderata();
-  ev.target.value="";
-};
+      return display.filter(ev=>{
+        const s = new Date(ev.start);
+        const e = new Date(ev.end);
+        // overlap with [start,end]
+        return e >= start && s <= addDays(end,1);
+      }).map(ev=>{
+        const meta = TYPE_META[ev.type] || {label: ev.type, colorVar:"--muted"};
+        const p = ev.personId ? personById(ev.personId) : null;
+        const color = meta.colorVar.startsWith("--") ? cssVar(meta.colorVar) : meta.colorVar;
+        const title = `${meta.label}${p ? " — "+p.label : ""}${ev.note ? " • "+ev.note : ""}`;
+        return {
+          id: ev.id,
+          start: ev.start,
+          end: ev.end,
+          title,
+          allDay:true,
+          backgroundColor: color,
+          borderColor: "transparent",
+          textColor: state.settings.theme==="dark" ? "#0b0d12" : "#101521",
+          extendedProps: { raw: ev }
+        };
+      });
+    }
 
-// Admin bindings
-el("btnComputeSlots").onclick = () => {
-  const s=el("admStart").value||todayISO();
-  const e=el("admEnd").value||addDaysISO(s,60);
-  const gen = generateSlots(s,e);
-  state.admin.slots = gen.slots;
-  state.admin.assignmentsVersion++;
-  saveState();
-  renderAdmin();
-};
+    function renderCalendars(){
+      destroyCalendars();
 
-el("btnAutoAssign").onclick = () => {
-  const s=el("admStart").value||todayISO();
-  const e=el("admEnd").value||addDaysISO(s,60);
-  const opts = {
-    avoidBack: el("avoidBack").value==="1",
-    wPref: Number(el("wPref").value||3),
-    wAvoid: Number(el("wAvoid").value||12)
-  };
-  autoAssign(s,e,opts);
-  renderAdmin();
-};
+      const m1 = state.viewStart;
+      const m2 = addMonths(m1,1);
+      const m3 = addMonths(m1,2);
 
-el("btnResetAll").onclick = () => {
-  if(!confirm("Reset global (slots + affectations + prefs) ?")) return;
-  state = loadState(); // back to defaults
-  saveState();
-  initPeopleSelects();
-  renderDesiderata();
-  renderAdmin();
-  renderResult();
-};
+      els.m1Title.textContent = frenchMonthTitle(m1);
+      els.m2Title.textContent = frenchMonthTitle(m2);
+      els.m3Title.textContent = frenchMonthTitle(m3);
 
-el("btnExportAll").onclick = () => {
-  const data = { state, exportedAt: new Date().toISOString() };
-  downloadJSON(data, `gardes_app_export.json`);
-};
-el("btnImportAll").onclick = () => el("fileImportAll").click();
-el("fileImportAll").onchange = async (ev) => {
-  const f = ev.target.files[0]; if(!f) return;
-  const txt = await f.text();
-  const data = JSON.parse(txt);
-  if(!data.state) { alert("JSON invalide."); return; }
-  state = data.state;
-  saveState();
-  initPeopleSelects();
-  renderDesiderata();
-  renderAdmin();
-  renderResult();
-  ev.target.value="";
-};
+      const common = {
+        initialView: "dayGridMonth",
+        height: "auto",
+        locale: "fr",
+        firstDay: 1,
+        dayMaxEvents: 3,
+        fixedWeekCount: false,
+        eventClick: (info)=>{
+          const raw = info.event.extendedProps.raw;
+          // ignore system holiday click editing? allow view-only
+          openEventModal(raw);
+        },
+        dateClick: (info)=>{
+          // quick add event on a day
+          openEventModal({ start: info.dateStr, end: info.dateStr }, null, true);
+        }
+      };
 
-// Result bindings
-el("resPerson").onchange = () => renderResult();
-el("resMonth").onchange = () => renderResult();
-el("resPrev").onclick = () => {
-  const cur = el("resMonth").value;
-  const d = new Date(cur+"-01T00:00:00");
-  d.setMonth(d.getMonth()-1);
-  el("resMonth").value = d.toISOString().slice(0,7);
-  renderResult();
-};
-el("resNext").onclick = () => {
-  const cur = el("resMonth").value;
-  const d = new Date(cur+"-01T00:00:00");
-  d.setMonth(d.getMonth()+1);
-  el("resMonth").value = d.toISOString().slice(0,7);
-  renderResult();
-};
-el("btnExportPersonPlan").onclick = () => {
-  const pid = el("resPerson").value;
-  const p = getPersonById(pid);
-  const recups = Array.from(computeRecupForPerson(pid)).sort();
-  const data = {
-    person: p.name,
-    points: personPoints(pid),
-    assignments: state.admin.slots.filter(s=>s.assigned===pid).sort((a,b)=>a.date.localeCompare(b.date)),
-    recup,
-    prefs: p.pref||{}
-  };
-  downloadJSON(data, `planning_${p.name.replace(/\s+/g,"_")}.json`);
-};
+      cals.cal1 = new FullCalendar.Calendar(document.getElementById("cal1"), {
+        ...common,
+        initialDate: toISODate(m1),
+        events: calendarEventsForMonth(m1),
+      });
+      cals.cal2 = new FullCalendar.Calendar(document.getElementById("cal2"), {
+        ...common,
+        initialDate: toISODate(m2),
+        events: calendarEventsForMonth(m2),
+      });
+      cals.cal3 = new FullCalendar.Calendar(document.getElementById("cal3"), {
+        ...common,
+        initialDate: toISODate(m3),
+        events: calendarEventsForMonth(m3),
+      });
 
-// utils
-function downloadJSON(obj, filename){
-  const blob = new Blob([JSON.stringify(obj,null,2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url; a.download=filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
+      cals.cal1.render(); cals.cal2.render(); cals.cal3.render();
+    }
 
-// initial render
-renderDesiderata();
-renderResult();
-</script>
+    // Timeline
+    let timeline = null;
+    function renderTimeline(){
+      const container = document.getElementById("timeline");
+      container.innerHTML = "";
+
+      const start = state.viewStart;
+      const end = endOfMonth(addMonths(start,2));
+
+      // groups = persons + "Non assigné"
+      const groups = new vis.DataSet();
+      groups.add({ id:"unassigned", content:"Non assigné" });
+      state.persons.forEach(p=>{
+        groups.add({ id:p.id, content: escapeHtml(p.label) });
+      });
+
+      const items = new vis.DataSet();
+      const display = buildDisplayEvents();
+
+      display.forEach(ev=>{
+        const meta = TYPE_META[ev.type] || {label: ev.type, colorVar:"--muted"};
+        const p = ev.personId ? personById(ev.personId) : null;
+        const group = ev.personId || "unassigned";
+        const color = meta.colorVar.startsWith("--") ? cssVar(meta.colorVar) : meta.colorVar;
+        const label = `${meta.label}${p ? " — "+p.label : ""}${ev.note ? " • "+ev.note : ""}`;
+
+        items.add({
+          id: ev.id,
+          group,
+          start: ev.start,
+          end: ev.end,
+          content: escapeHtml(label),
+          style: `background:${color}; border:none; color:${state.settings.theme==="dark" ? "#0b0d12" : "#101521"}; border-radius:12px; padding:6px 8px;`,
+          title: escapeHtml(label)
+        });
+      });
+
+      timeline = new vis.Timeline(container, items, groups, {
+        start: toISODate(addDays(start,-3)),
+        end: toISODate(addDays(end,3)),
+        zoomMin: 1000 * 60 * 60 * 24 * 3,        // 3 days
+        zoomMax: 1000 * 60 * 60 * 24 * 120,      // 120 days
+        stack: true,
+        verticalScroll: true,
+        maxHeight: "100%",
+        margin: { item: 10, axis: 12 },
+      });
+
+      timeline.on("select", (props)=>{
+        if(!props.items || !props.items.length) return;
+        const id = props.items[0];
+        const ev = buildDisplayEvents().find(x=>x.id===id);
+        if(ev) openEventModal(ev);
+      });
+    }
+
+    // Coverage
+    function renderCoverage(){
+      const body = els.coverageBody;
+      body.innerHTML = "";
+
+      const start = state.viewStart;
+      const end = endOfMonth(addMonths(start,2));
+      const display = buildDisplayEvents();
+
+      // index by date
+      const days = [];
+      for(let d=new Date(start); d<=end; d=addDays(d,1)) days.push(new Date(d));
+
+      const byDate = new Map(); // yyyy-mm-dd -> events[]
+      display.forEach(ev=>{
+        // distribute across days for all-day blocks
+        const s = new Date(ev.start);
+        const e = new Date(ev.end);
+        for(let d=new Date(s); d<e; d=addDays(d,1)){
+          const k = toISODate(d);
+          if(!byDate.has(k)) byDate.set(k, []);
+          byDate.get(k).push(ev);
+        }
+      });
+
+      days.forEach(d=>{
+        const k = toISODate(d);
+        const list = (byDate.get(k) || []).slice();
+
+        const g1 = list.filter(x=> (TYPE_META[x.type]?.line==="G1"));
+        const g2 = list.filter(x=> (TYPE_META[x.type]?.line==="G2"));
+        const other = list.filter(x=> !g1.includes(x) && !g2.includes(x));
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><b>${d.toLocaleDateString("fr-BE",{weekday:"short", day:"2-digit", month:"2-digit"})}</b><div style="color:var(--muted); font-size:11px;">${k}</div></td>
+          <td>${renderBadges(g1)}</td>
+          <td>${renderBadges(g2)}</td>
+          <td>${renderBadges(other)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function renderBadges(items){
+      if(!items.length) return `<span style="color:var(--muted);">—</span>`;
+      return items.map(ev=>{
+        const meta = TYPE_META[ev.type] || {label: ev.type, colorVar:"--muted"};
+        const p = ev.personId ? personById(ev.personId) : null;
+        const color = meta.colorVar.startsWith("--") ? cssVar(meta.colorVar) : meta.colorVar;
+        const txt = `${meta.label}${p ? " — "+p.label : ""}${ev.note ? " • "+ev.note : ""}`;
+        return `<span class="badge"><span class="sq" style="background:${color}"></span>${escapeHtml(txt)}</span>`;
+      }).join("");
+    }
+
+    function renderAll(){
+      refreshKPIs();
+      renderPeople();
+      renderCalendars();
+      renderTimeline();
+      renderCoverage();
+      fillPersonSelect();
+      refreshRangeTitles();
+    }
+
+    function refreshRangeTitles(){
+      const start = state.viewStart;
+      const end = endOfMonth(addMonths(start,2));
+      els.kRange.textContent = `${toISODate(start)} → ${toISODate(end)}`;
+      els.rangeTitle.textContent = `${frenchMonthTitle(start)} — ${frenchMonthTitle(end)}`;
+    }
+
+    /************************************************************
+      Modal: add/edit event
+    *************************************************************/
+    let editingEventId = null;
+
+    function fillPersonSelect(){
+      const sel = els.ePerson;
+      sel.innerHTML = "";
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = "— Non assigné —";
+      sel.appendChild(opt0);
+
+      state.persons.forEach(p=>{
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.label;
+        sel.appendChild(opt);
+      });
+    }
+
+    function openEventModal(ev=null, forcePersonId=null, dateClick=false){
+      editingEventId = null;
+      els.btnDeleteEvent.style.display = "none";
+
+      // Protect system events: allow view-only
+      const isSystem = ev && TYPE_META[ev.type]?.system;
+
+      if(ev && ev.id){
+        editingEventId = ev.id;
+        els.modalTitle.textContent = isSystem ? "Voir événement système" : "Modifier événement";
+        els.btnDeleteEvent.style.display = (!isSystem && !ev.id.startsWith("hol_") && !ev.id.startsWith("rec_")) ? "inline-block" : "none";
+      }else{
+        els.modalTitle.textContent = dateClick ? "Ajouter événement (jour sélectionné)" : "Ajouter un événement";
+      }
+
+      // Defaults
+      const today = toISODate(new Date());
+      els.eType.value = ev?.type && !isSystem ? ev.type : "g1_week";
+      els.eStart.value = ev?.start ? ev.start : (ev?.start ? ev.start : today);
+      els.eEnd.value = ev?.end && !sameDay(new Date(ev.start), new Date(addDays(new Date(ev.end),-1))) ? ev.end : ""; // keep empty for single day
+      els.eNote.value = ev?.note || "";
+
+      // Person
+      fillPersonSelect();
+      if(forcePersonId) els.ePerson.value = forcePersonId;
+      else els.ePerson.value = ev?.personId || "";
+
+      // Disable editing for system events
+      [els.eType, els.ePerson, els.eStart, els.eEnd, els.eNote, els.btnSaveEvent].forEach(x=> x.disabled = !!isSystem);
+      if(isSystem) els.btnSaveEvent.textContent = "OK";
+      else els.btnSaveEvent.textContent = editingEventId ? "Mettre à jour" : "Enregistrer";
+
+      els.modalBack.classList.add("show");
+    }
+
+    function closeModal(){
+      els.modalBack.classList.remove("show");
+      editingEventId = null;
+    }
+
+    function saveEventFromModal(){
+      // If modal is in system view-only mode, close
+      if(els.btnSaveEvent.disabled){
+        closeModal();
+        return;
+      }
+
+      const type = els.eType.value;
+      const personId = els.ePerson.value || null;
+      const start = els.eStart.value;
+      let end = els.eEnd.value || start;
+      const note = els.eNote.value.trim();
+
+      if(!start){
+        alert("Date début manquante.");
+        return;
+      }
+
+      const base = {
+        type, personId, start, end, note,
+        meta: {}
+      };
+
+      if(editingEventId){
+        state.events = state.events.map(ev=> ev.id===editingEventId ? {...ev, ...base} : ev);
+      }else{
+        state.events.push({ id: uid("ev"), ...base });
+      }
+
+      save();
+      renderAll();
+      closeModal();
+    }
+
+    function deleteEvent(){
+      if(!editingEventId) return;
+      if(!confirm("Supprimer cet événement ?")) return;
+      state.events = state.events.filter(ev=>ev.id!==editingEventId);
+      save();
+      renderAll();
+      closeModal();
+    }
+
+    /************************************************************
+      People add/update
+    *************************************************************/
+    function savePerson(){
+      const label = (els.pLabel.value || "").trim();
+      if(!label){
+        alert("Nom/initiales manquants.");
+        return;
+      }
+      const quota = parseFloat(els.pQuota.value);
+      const color = els.pColor.value;
+
+      const editId = els.btnSavePerson.dataset.editId || null;
+      if(editId){
+        state.persons = state.persons.map(p=> p.id===editId ? {...p, label, quota, color} : p);
+        delete els.btnSavePerson.dataset.editId;
+        els.btnSavePerson.textContent = "Enregistrer";
+      }else{
+        state.persons.push({ id: uid("p"), label, quota, color });
+      }
+
+      els.pLabel.value = "";
+      els.pQuota.value = "1.0";
+      els.pColor.value = "#4aa3ff";
+
+      save();
+      renderAll();
+    }
+
+    /************************************************************
+      Navigation (3 months)
+    *************************************************************/
+    function goToday(){
+      state.viewStart = startOfMonth(new Date());
+      save();
+      renderAll();
+    }
+    function goPrev(){
+      state.viewStart = addMonths(state.viewStart, -1);
+      save();
+      renderAll();
+    }
+    function goNext(){
+      state.viewStart = addMonths(state.viewStart, +1);
+      save();
+      renderAll();
+    }
+
+    /************************************************************
+      Suggestions (heuristique simple mais utile)
+      - Proposer congés autour de récup + éviter veille de garde
+      - Proposer candidats de garde : ceux avec moins de charges (ici: nb de gardes sur fenêtre)
+    *************************************************************/
+    function getWindowDates(){
+      const start = state.viewStart;
+      const end = endOfMonth(addMonths(start,2));
+      return { start, end };
+    }
+
+    function eventsForPerson(personId){
+      return state.events.filter(e=>e.personId===personId);
+    }
+
+    function dayHasType(dateISO, type){
+      const disp = buildDisplayEvents();
+      return disp.some(ev=> ev.type===type && overlapsDay(ev, dateISO));
+    }
+
+    function overlapsDay(ev, dateISO){
+      const d = new Date(dateISO);
+      const s = new Date(ev.start);
+      const e = new Date(ev.end);
+      return d >= s && d < e;
+    }
+
+    function listDayEvents(dateISO){
+      const disp = buildDisplayEvents();
+      return disp.filter(ev=>overlapsDay(ev, dateISO));
+    }
+
+    function propose(){
+      // Minimal suggestions: pick a date (today) and propose leave days + guard candidates
+      const todayISO = toISODate(new Date());
+      const {start, end} = getWindowDates();
+
+      // pick focus date = today if in window else window start
+      const focus = (new Date(todayISO) >= start && new Date(todayISO) <= end) ? todayISO : toISODate(start);
+
+      // leave suggestions for each person: 3 best days in next 14 days
+      const horizon = 14;
+      const days = [];
+      for(let i=0;i<horizon;i++) days.push(toISODate(addDays(new Date(focus), i)));
+
+      const leaveSug = [];
+      state.persons.forEach(p=>{
+        const scored = days.map(d=>{
+          const dayEvents = listDayEvents(d);
+          const hasGuard = dayEvents.some(ev=> ev.personId===p.id && TYPE_META[ev.type]?.kind==="guard");
+          const hasLeave = dayEvents.some(ev=> ev.personId===p.id && ev.type==="leave");
+          const hasHalf = dayEvents.some(ev=> ev.personId===p.id && TYPE_META[ev.type]?.kind==="half");
+          const hasRecup = dayEvents.some(ev=> ev.personId===p.id && ev.type==="recup");
+          const tomorrowHasGuard = listDayEvents(toISODate(addDays(new Date(d),1))).some(ev=> ev.personId===p.id && TYPE_META[ev.type]?.kind==="guard");
+          const yesterdayHasGuard = listDayEvents(toISODate(addDays(new Date(d),-1))).some(ev=> ev.personId===p.id && TYPE_META[ev.type]?.kind==="guard");
+
+          // If already occupied by guard/leave, skip
+          if(hasGuard || hasLeave) return { d, score: -999 };
+
+          let score = 0;
+          if(hasRecup) score += 3;                 // day is already recup -> nice to chain? (or suggest adjacent)
+          if(listDayEvents(toISODate(addDays(new Date(d),-1))).some(ev=> ev.personId===p.id && ev.type==="recup")) score += 2;
+          if(listDayEvents(toISODate(addDays(new Date(d),+1))).some(ev=> ev.personId===p.id && ev.type==="recup")) score += 2;
+
+          if(tomorrowHasGuard) score -= 4;          // avoid "veille de garde"
+          if(yesterdayHasGuard) score -= 2;         // avoid "retour de garde immédiat"
+          if(hasHalf) score += 1;                   // half-day -> easy to extend
+          // Holidays: you may prefer not to propose leave on holidays (already off) -> score -1
+          if(dayEvents.some(ev=>ev.type==="holiday")) score -= 1;
+
+          return { d, score };
+        }).filter(x=>x.score>-100).sort((a,b)=> b.score-a.score || a.d.localeCompare(b.d)).slice(0,3);
+
+        if(scored.length){
+          leaveSug.push({ person: p.label, picks: scored });
+        }
+      });
+
+      // guard candidates for focus date: those with least guard count in window
+      const disp = buildDisplayEvents();
+      const dayGuards = disp.filter(ev=> overlapsDay(ev, focus) && TYPE_META[ev.type]?.kind==="guard");
+      const occupied = new Set(dayGuards.map(ev=>ev.personId).filter(Boolean));
+
+      const guardLoad = new Map(); // personId -> count guards in window
+      state.persons.forEach(p=>{
+        const count = disp.filter(ev=>{
+          if(ev.personId !== p.id) return false;
+          if(TYPE_META[ev.type]?.kind!=="guard") return false;
+          const s = new Date(ev.start), e = new Date(ev.end);
+          return e >= start && s <= addDays(end,1);
+        }).length;
+        guardLoad.set(p.id, count);
+      });
+
+      const candidates = state.persons
+        .filter(p=> !occupied.has(p.id))
+        .map(p=> ({ label:p.label, load: guardLoad.get(p.id) || 0 }))
+        .sort((a,b)=> a.load-b.load || a.label.localeCompare(b.label))
+        .slice(0,6);
+
+      // Display
+      els.kSugLeave.textContent = leaveSug.length ? `${leaveSug.length} pers.` : "—";
+      els.kSugGuard.textContent = candidates.length ? `${candidates.length} candidats` : "—";
+
+      let html = `<b>Focus date :</b> ${focus}<br><br>`;
+      html += `<b>Proposition congés (14 jours)</b><br>`;
+      if(!leaveSug.length){
+        html += `<span style="color:var(--muted);">Aucune proposition (fenêtre trop chargée ou pas de personnes).</span><br>`;
+      }else{
+        leaveSug.slice(0,8).forEach(x=>{
+          html += `• <b>${escapeHtml(x.person)}</b> : ${x.picks.map(p=> `${p.d} (score ${p.score})`).join(" • ")}<br>`;
+        });
+      }
+      html += `<br><b>Candidats garde (non assignés à la date focus)</b><br>`;
+      if(!candidates.length){
+        html += `<span style="color:var(--muted);">Aucun candidat disponible.</span>`;
+      }else{
+        candidates.forEach(c=>{
+          html += `• ${escapeHtml(c.label)} — charge gardes fenêtre: <b>${c.load}</b><br>`;
+        });
+      }
+      els.suggestBox.innerHTML = html;
+
+      // Open modal for visibility
+      openEventModal({ start: focus, end: focus }, null, true);
+    }
+
+    /************************************************************
+      Import/Export
+    *************************************************************/
+    function exportJSON(){
+      els.ioBox.value = JSON.stringify(state, null, 2);
+    }
+
+    function importJSON(){
+      const txt = els.ioBox.value.trim();
+      if(!txt){ alert("Colle un JSON dans la zone."); return; }
+      try{
+        const obj = JSON.parse(txt);
+        if(!obj || typeof obj !== "object") throw new Error("Bad JSON");
+        // Minimal validation
+        state.persons = Array.isArray(obj.persons) ? obj.persons : [];
+        state.events = Array.isArray(obj.events) ? obj.events : [];
+        state.viewStart = obj.viewStart ? new Date(obj.viewStart) : startOfMonth(new Date());
+        state.settings = obj.settings || state.settings;
+        applyTheme();
+        applyTogglesFromState();
+        save();
+        renderAll();
+      }catch(e){
+        alert("JSON invalide.");
+      }
+    }
+
+    function exportICS(){
+      // Minimal ICS: export only guards (G1/G2) & leaves
+      const disp = buildDisplayEvents();
+      const {start, end} = getWindowDates();
+      const rows = [];
+      rows.push("BEGIN:VCALENDAR");
+      rows.push("VERSION:2.0");
+      rows.push("PRODID:-//GardesConsole//FR");
+
+      disp.forEach(ev=>{
+        const kind = TYPE_META[ev.type]?.kind;
+        if(!(kind==="guard" || kind==="leave" || kind==="half")) return;
+        const s = new Date(ev.start);
+        const e = new Date(ev.end);
+
+        // keep within window
+        if(e < start || s > end) return;
+
+        const meta = TYPE_META[ev.type] || {label: ev.type};
+        const p = ev.personId ? personById(ev.personId) : null;
+        const summary = `${meta.label}${p ? " - "+p.label : ""}`;
+        const uid = ev.id + "@gardesconsole";
+
+        // all-day event: DTSTART;VALUE=DATE:YYYYMMDD
+        const dtS = ev.start.replaceAll("-","");
+        // end is exclusive for all-day; ICS requires end date as next day, ok.
+        const dtE = ev.end.replaceAll("-","");
+
+        rows.push("BEGIN:VEVENT");
+        rows.push("UID:"+uid);
+        rows.push("DTSTAMP:"+toICSStamp(new Date()));
+        rows.push("DTSTART;VALUE=DATE:"+dtS);
+        rows.push("DTEND;VALUE=DATE:"+dtE);
+        rows.push("SUMMARY:"+escapeICS(summary));
+        if(ev.note) rows.push("DESCRIPTION:"+escapeICS(ev.note));
+        rows.push("END:VEVENT");
+      });
+
+      rows.push("END:VCALENDAR");
+
+      const ics = rows.join("\r\n");
+      els.ioBox.value = ics;
+      // Also download
+      const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "gardes_export.ics";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function toICSStamp(d){
+      // UTC stamp: YYYYMMDDTHHMMSSZ
+      const dt = new Date(d);
+      return dt.getUTCFullYear()
+        + pad2(dt.getUTCMonth()+1)
+        + pad2(dt.getUTCDate()) + "T"
+        + pad2(dt.getUTCHours())
+        + pad2(dt.getUTCMinutes())
+        + pad2(dt.getUTCSeconds()) + "Z";
+    }
+
+    function escapeICS(s){
+      return String(s).replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
+    }
+
+    /************************************************************
+      View switching
+    *************************************************************/
+    function setView(name){
+      document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+      if(name==="cal") document.getElementById("viewCal").classList.add("active");
+      if(name==="time") document.getElementById("viewTime").classList.add("active");
+      if(name==="cover") document.getElementById("viewCover").classList.add("active");
+    }
+
+    /************************************************************
+      Misc
+    *************************************************************/
+    function escapeHtml(s){
+      return String(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+    }
+
+    /************************************************************
+      Wire up events
+    *************************************************************/
+    function bindUI(){
+      els.btnSavePerson.addEventListener("click", savePerson);
+      els.btnAddPerson.addEventListener("click", ()=>{ els.pLabel.focus(); });
+
+      els.btnAddEvent.addEventListener("click", ()=> openEventModal());
+      els.btnCloseModal.addEventListener("click", closeModal);
+      els.modalBack.addEventListener("click", (e)=>{ if(e.target===els.modalBack) closeModal(); });
+
+      els.btnSaveEvent.addEventListener("click", saveEventFromModal);
+      els.btnDeleteEvent.addEventListener("click", deleteEvent);
+
+      els.btnReset.addEventListener("click", ()=>{
+        if(confirm("Tout effacer ? (irréversible)")) hardReset();
+      });
+
+      els.btnToday.addEventListener("click", goToday);
+      els.btnPrev.addEventListener("click", goPrev);
+      els.btnNext.addEventListener("click", goNext);
+
+      els.btnExportJSON.addEventListener("click", exportJSON);
+      els.btnImportJSON.addEventListener("click", importJSON);
+      els.btnExportICS.addEventListener("click", exportICS);
+
+      els.btnTheme.addEventListener("click", ()=>{
+        state.settings.theme = (state.settings.theme==="dark") ? "light" : "dark";
+        save();
+        applyTheme();
+      });
+
+      els.tglHolidays.addEventListener("change", ()=>{
+        state.settings.showHolidays = els.tglHolidays.checked;
+        save();
+        renderAll();
+      });
+      els.tglRecup.addEventListener("change", ()=>{
+        state.settings.showRecup = els.tglRecup.checked;
+        save();
+        renderAll();
+      });
+      els.tglHalf.addEventListener("change", ()=>{
+        state.settings.showHalf = els.tglHalf.checked;
+        save();
+        renderAll();
+      });
+
+      els.btnPropose.addEventListener("click", propose);
+
+      // Keyboard: ESC closes modal
+      window.addEventListener("keydown", (e)=>{
+        if(e.key==="Escape") closeModal();
+      });
+    }
+
+    /************************************************************
+      Init
+    *************************************************************/
+    function init(){
+      cacheEls();
+      bindUI();
+
+      const ok = load();
+      if(!ok){
+        // minimal seed: none. Because you asked: NO pre-registered names.
+        save();
+      }else{
+        // normalize viewStart if stored as string
+        state.viewStart = new Date(state.viewStart);
+      }
+
+      applyTogglesFromState();
+      applyTheme();
+      renderAll();
+
+      // If no persons, open hint via modal? Keep calm: no.
+    }
+
+    init();
+  </script>
 </body>
 </html>
