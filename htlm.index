@@ -1,0 +1,1238 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>GARDES — Desiderata • Répartition • Résultats</title>
+  <style>
+    :root{
+      --bg:#0f1115; --fg:#e9edf5; --muted:#a8b0bd;
+      --card:rgba(18,20,30,.62); --card2:rgba(18,20,30,.42);
+      --stroke:rgba(255,255,255,.08);
+      --good:rgba(120,255,170,.14);
+      --bad:rgba(255,120,120,.14);
+      --warn:rgba(255,210,120,.16);
+      --accent:#8ad1ff;
+      --r:18px;
+      --shadow: 0 18px 50px rgba(0,0,0,.55);
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--font);
+      background: radial-gradient(1200px 800px at 20% 0%, rgba(60,120,255,.10), transparent 60%),
+                  radial-gradient(1000px 700px at 90% 10%, rgba(100,255,200,.08), transparent 55%),
+                  var(--bg);
+      color:var(--fg);
+    }
+    header{
+      position:sticky; top:0; z-index:5;
+      backdrop-filter: blur(14px);
+      background: rgba(12,14,20,.55);
+      border-bottom:1px solid var(--stroke);
+    }
+    .wrap{max-width:1180px; margin:0 auto; padding:14px 14px 28px;}
+    .top{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:10px 0;
+    }
+    .brand{
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .brand .t{font-weight:700; letter-spacing:.4px}
+    .brand .s{font-size:12px; color:var(--muted)}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap;}
+    .tab{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      color:var(--fg);
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      user-select:none;
+      transition: .15s transform ease, .15s background ease;
+      font-size:13px;
+    }
+    .tab:hover{transform:translateY(-1px); background:rgba(255,255,255,.06)}
+    .tab.active{background:rgba(138,209,255,.15); border-color:rgba(138,209,255,.35)}
+    .grid{
+      display:grid; gap:12px;
+      grid-template-columns: 1.25fr .75fr;
+    }
+    @media(max-width:980px){ .grid{grid-template-columns:1fr} }
+    .card{
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding:14px;
+    }
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    label{font-size:12px; color:var(--muted)}
+    select, input[type="text"], input[type="date"], input[type="number"]{
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--stroke);
+      color:var(--fg);
+      padding:10px 10px;
+      border-radius: 12px;
+      outline:none;
+    }
+    input[type="number"]{width:110px}
+    button{
+      background: rgba(138,209,255,.14);
+      border:1px solid rgba(138,209,255,.25);
+      color:var(--fg);
+      padding:10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      transition:.15s transform ease, .15s background ease;
+    }
+    button:hover{transform:translateY(-1px); background:rgba(138,209,255,.18)}
+    button.ghost{
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--stroke);
+    }
+    button.danger{
+      background: rgba(255,120,120,.14);
+      border-color: rgba(255,120,120,.25);
+    }
+    .hint{font-size:12px; color:var(--muted); line-height:1.35}
+    .hr{height:1px; background:var(--stroke); margin:12px 0}
+    .title{font-weight:700; margin:2px 0 10px}
+    .pill{
+      font-size:12px; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--stroke); background:rgba(255,255,255,.04);
+      color:var(--muted);
+    }
+
+    /* Calendar */
+    .calHead{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px}
+    .calGrid{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:8px;
+    }
+    .dow{
+      font-size:11px; color:var(--muted);
+      text-align:center; padding:6px 0;
+    }
+    .day{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      padding:9px 9px 10px;
+      background: rgba(255,255,255,.03);
+      min-height:76px;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+    }
+    .day.off{background: linear-gradient(180deg, rgba(255,120,120,.10), rgba(255,255,255,.02));}
+    .day.pref{background: linear-gradient(180deg, rgba(120,255,170,.10), rgba(255,255,255,.02));}
+    .day.hol{outline: 1px solid rgba(255,210,120,.25); background: linear-gradient(180deg, rgba(255,210,120,.10), rgba(255,255,255,.02));}
+    .day.today{outline: 1px solid rgba(138,209,255,.35);}
+    .day .n{font-size:12px; color:var(--muted)}
+    .badges{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+    .b{
+      font-size:11px; padding:3px 7px; border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(0,0,0,.12);
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .b.garde{border-color:rgba(138,209,255,.25); color:rgba(138,209,255,.95)}
+    .b.recup{border-color:rgba(120,255,170,.25); color:rgba(120,255,170,.95)}
+    .b.bloc{border-color:rgba(255,210,120,.25); color:rgba(255,210,120,.95)}
+    .b.note{border-color:rgba(255,255,255,.12)}
+    .legend{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+
+    /* Lists */
+    .list{display:flex; flex-direction:column; gap:8px; margin-top:10px}
+    .item{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      padding:10px;
+      background: rgba(255,255,255,.03);
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .item .meta{display:flex; flex-direction:column; gap:3px}
+    .item .meta .k{font-size:12px; color:var(--muted)}
+    .item .meta .v{font-size:13px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:var(--muted)}
+    textarea{
+      width:100%;
+      min-height:120px;
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--stroke);
+      color:var(--fg);
+      padding:10px;
+      border-radius: 12px;
+      outline:none;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:12px;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="t">GARDES</div>
+        <div class="s">Desiderata → Répartition → Résultats (local, minimaliste, calcul points + récup)</div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" data-view="desiderata">1) Desiderata</div>
+        <div class="tab" data-view="admin">2) Répartition</div>
+        <div class="tab" data-view="result">3) Résultat</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- VIEW 1 -->
+  <section id="view-desiderata" class="grid">
+    <div class="card">
+      <div class="title">Desiderata — calendrier</div>
+      <div class="row">
+        <div>
+          <label>Personne</label><br/>
+          <select id="selPerson"></select>
+        </div>
+        <div>
+          <label>Période (début)</label><br/>
+          <input type="date" id="rangeStart">
+        </div>
+        <div>
+          <label>Période (fin)</label><br/>
+          <input type="date" id="rangeEnd">
+        </div>
+        <div>
+          <label>Mois affiché</label><br/>
+          <input type="month" id="monthPick">
+        </div>
+        <button class="ghost" id="btnToday">Aujourd’hui</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <div class="pill">Clique un jour : cycle <span class="mono">Libre → Éviter garde → Préf garde → Éviter congé → Bloc consult</span></div>
+      </div>
+
+      <div class="calHead">
+        <button class="ghost" id="prevMonth">◀</button>
+        <div class="row">
+          <div class="pill" id="calLabel">—</div>
+          <div class="pill" id="holCount">—</div>
+        </div>
+        <button class="ghost" id="nextMonth">▶</button>
+      </div>
+
+      <div class="calGrid" id="calDOW"></div>
+      <div class="calGrid" id="cal"></div>
+
+      <div class="legend">
+        <span class="pill">Férié = contour doré</span>
+        <span class="pill">Éviter garde = rouge doux</span>
+        <span class="pill">Préférer garde = vert doux</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title">Paramètres personnels</div>
+
+      <div class="row">
+        <div>
+          <label>Mi-temps / FTE (0.5, 0.8, 1.0…)</label><br/>
+          <input type="number" id="fte" min="0.1" max="1.0" step="0.1">
+        </div>
+        <div>
+          <label>Congés souhaités (nb sur la période)</label><br/>
+          <input type="number" id="wishLeaves" min="0" max="30" step="1">
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="title">Résumé rapides</div>
+      <div class="list" id="prefSummary"></div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <button id="btnSave">Enregistrer</button>
+        <button class="ghost" id="btnExportMe">Exporter mes desiderata (JSON)</button>
+        <button class="ghost" id="btnImportMe">Importer (JSON)</button>
+        <button class="danger" id="btnResetMe">Reset personne</button>
+      </div>
+
+      <div class="hr"></div>
+      <div class="hint">
+        Astuce : en “vrai monde”, chaque personne peut remplir ses desiderata puis te remettre un JSON (mail/drive).
+        L’admin importe tout et lance la répartition.
+      </div>
+
+      <input type="file" id="fileImportMe" accept="application/json" style="display:none"/>
+    </div>
+  </section>
+
+  <!-- VIEW 2 -->
+  <section id="view-admin" class="grid" style="display:none">
+    <div class="card">
+      <div class="title">Répartition — paramètres</div>
+
+      <div class="row">
+        <div>
+          <label>Période (début)</label><br/>
+          <input type="date" id="admStart">
+        </div>
+        <div>
+          <label>Période (fin)</label><br/>
+          <input type="date" id="admEnd">
+        </div>
+        <div>
+          <label>Éviter back-to-back (garde la veille)</label><br/>
+          <select id="avoidBack">
+            <option value="1">Oui</option>
+            <option value="0">Non</option>
+          </select>
+        </div>
+        <div>
+          <label>Poids “préférence”</label><br/>
+          <input type="number" id="wPref" min="0" max="10" step="1" value="3">
+        </div>
+        <div>
+          <label>Poids “éviter garde”</label><br/>
+          <input type="number" id="wAvoid" min="0" max="20" step="1" value="12">
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <button id="btnComputeSlots">Générer slots</button>
+        <button id="btnAutoAssign">Auto-répartition</button>
+        <button class="ghost" id="btnExportAll">Exporter tout (JSON)</button>
+        <button class="ghost" id="btnImportAll">Importer tout (JSON)</button>
+        <button class="danger" id="btnResetAll">Reset global</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="title">Slots (générés) & affectations</div>
+      <div class="hint">Tu peux éditer à la main après auto-répartition (changement personne → recalcul points).</div>
+
+      <div class="list" id="slotList"></div>
+
+      <input type="file" id="fileImportAll" accept="application/json" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <div class="title">Équité — points</div>
+      <div class="list" id="pointsBoard"></div>
+      <div class="hr"></div>
+      <div class="title">Notes</div>
+      <div class="hint">
+        Ce moteur est volontairement “sobre” : glouton équilibré, lisible, ajustable.
+        Si vous voulez du niveau “optimisation combinatoire” (min-cost flow / ILP), on peut upgrader.
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 3 -->
+  <section id="view-result" class="grid" style="display:none">
+    <div class="card">
+      <div class="title">Résultat individuel</div>
+      <div class="row">
+        <div>
+          <label>Personne</label><br/>
+          <select id="resPerson"></select>
+        </div>
+        <div>
+          <label>Mois affiché</label><br/>
+          <input type="month" id="resMonth">
+        </div>
+        <button class="ghost" id="resPrev">◀</button>
+        <button class="ghost" id="resNext">▶</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="calHead">
+        <div class="row">
+          <div class="pill" id="resLabel">—</div>
+          <div class="pill" id="resPoints">—</div>
+          <div class="pill" id="resAlerts">—</div>
+        </div>
+      </div>
+
+      <div class="calGrid" id="resDOW"></div>
+      <div class="calGrid" id="resCal"></div>
+
+      <div class="legend">
+        <span class="pill">Garde = badge bleu</span>
+        <span class="pill">Récup = badge vert</span>
+        <span class="pill">Bloc consult = badge doré</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title">Export</div>
+      <div class="row">
+        <button class="ghost" id="btnExportPersonPlan">Exporter planning personne (JSON)</button>
+      </div>
+      <div class="hr"></div>
+      <div class="title">Aperçu brut</div>
+      <textarea id="rawPreview" readonly></textarea>
+      <div class="hint">
+        Pour un export Excel/PDF : possible, mais il faut passer par un petit script (ou une lib) — je peux te le faire après.
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =============================
+   Storage
+============================= */
+const KEY = "GARDES_APP_V1";
+const DOW = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+
+function todayISO(){
+  const d=new Date(); d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+function addDaysISO(iso, days){
+  const d=new Date(iso+"T00:00:00"); d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
+function ymFromISO(iso){ return iso.slice(0,7); }
+function monthToDate(ym){ return ym+"-01"; }
+function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+function loadState(){
+  const raw = localStorage.getItem(KEY);
+  if(raw){
+    try { return JSON.parse(raw); } catch(e){}
+  }
+  // Defaults
+  const t = todayISO();
+  return {
+    people: [
+      { id: "p1", name:"A. Bruno", fte:1.0, wishLeaves:0, pref:{} },
+      { id: "p2", name:"C. Insalaco", fte:1.0, wishLeaves:0, pref:{} },
+      { id: "p3", name:"C. Claes", fte:1.0, wishLeaves:0, pref:{} }
+    ],
+    // pref[iso] = { tag: "none|avoid_guard|prefer_guard|avoid_leave|block_consult" }
+    admin: {
+      slots: [], // {date,type,role,assignedPersonId,points}
+      assignmentsVersion: 0
+    }
+  };
+}
+function saveState(){
+  localStorage.setItem(KEY, JSON.stringify(state));
+}
+let state = loadState();
+
+/* =============================
+   Holidays Belgium (national)
+   - computed without internet
+============================= */
+// Easter algorithm (Anonymous Gregorian)
+function easterDate(year){
+  const a = year % 19;
+  const b = Math.floor(year/100);
+  const c = year % 100;
+  const d = Math.floor(b/4);
+  const e = b % 4;
+  const f = Math.floor((b+8)/25);
+  const g = Math.floor((b-f+1)/3);
+  const h = (19*a + b - d - g + 15) % 30;
+  const i = Math.floor(c/4);
+  const k = c % 4;
+  const l = (32 + 2*e + 2*i - h - k) % 7;
+  const m = Math.floor((a + 11*h + 22*l)/451);
+  const month = Math.floor((h + l - 7*m + 114)/31); // 3=March, 4=April
+  const day = ((h + l - 7*m + 114) % 31) + 1;
+  return new Date(Date.UTC(year, month-1, day));
+}
+function isoUTC(d){
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString().slice(0,10);
+}
+function belgiumHolidays(year){
+  const E = easterDate(year);
+  const holidays = [];
+  // Fixed dates
+  holidays.push({date:`${year}-01-01`, name:"Nouvel An"});
+  holidays.push({date:`${year}-05-01`, name:"Fête du Travail"});
+  holidays.push({date:`${year}-07-21`, name:"Fête nationale"});
+  holidays.push({date:`${year}-08-15`, name:"Assomption"});
+  holidays.push({date:`${year}-11-01`, name:"Toussaint"});
+  holidays.push({date:`${year}-11-11`, name:"Armistice"});
+  holidays.push({date:`${year}-12-25`, name:"Noël"});
+  // Movable (based on Easter)
+  const easterMon = new Date(E); easterMon.setUTCDate(easterMon.getUTCDate()+1);
+  holidays.push({date:isoUTC(easterMon), name:"Lundi de Pâques"});
+  const asc = new Date(E); asc.setUTCDate(asc.getUTCDate()+39);
+  holidays.push({date:isoUTC(asc), name:"Ascension"});
+  const whitMon = new Date(E); whitMon.setUTCDate(whitMon.getUTCDate()+50);
+  holidays.push({date:isoUTC(whitMon), name:"Lundi de Pentecôte"});
+  // Note: certains services ajoutent 26/12 ou autres usages locaux → à ajouter si besoin.
+  return holidays;
+}
+function buildHolidayMapForRange(startISO,endISO){
+  const y1 = Number(startISO.slice(0,4));
+  const y2 = Number(endISO.slice(0,4));
+  const map = {};
+  for(let y=y1; y<=y2; y++){
+    for(const h of belgiumHolidays(y)){
+      map[h.date]=h.name;
+    }
+  }
+  return map;
+}
+
+/* =============================
+   Guard slots & points rules
+   Types (simple MVP):
+   - weekday_night (18-9)
+   - weekend_day (8-18)
+   - weekend_night (18-8)
+   - holiday_day / holiday_night (same as weekend)
+============================= */
+function isWeekend(iso){
+  const d=new Date(iso+"T00:00:00");
+  const wd = (d.getDay()+6)%7; // Mon=0..Sun=6
+  return wd>=5;
+}
+function weekdayIndex(iso){
+  const d=new Date(iso+"T00:00:00");
+  return (d.getDay()+6)%7;
+}
+function isHoliday(iso, holMap){ return !!holMap[iso]; }
+
+function pointsForSlot(slot){
+  // slot.type in: weekday_night, weekend_day, weekend_night, holiday_day, holiday_night
+  // Based on your rules mapping (MVP approximation):
+  // - weekday_night Mon-Thu => 1
+  // - weekday_night Fri => 2
+  // - weekend_day/night => 2
+  // - holiday_day => 2
+  // - holiday_night => 1.5 if next day is weekday else 2 (approx)
+  if(slot.type==="weekday_night"){
+    const wd = weekdayIndex(slot.date);
+    if(wd===4) return 2.0; // Friday night guard
+    return 1.0; // Mon-Thu
+  }
+  if(slot.type==="weekend_day" || slot.type==="weekend_night") return 2.0;
+  if(slot.type==="holiday_day") return 2.0;
+  if(slot.type==="holiday_night"){
+    const next = addDaysISO(slot.date,1);
+    const wd = weekdayIndex(next);
+    if(wd<=4) return 1.5;
+    return 2.0;
+  }
+  return 0.0;
+}
+
+function generateSlots(startISO,endISO){
+  const holMap = buildHolidayMapForRange(startISO,endISO);
+  const slots=[];
+  let cur=startISO;
+  while(cur<=endISO){
+    const weekend = isWeekend(cur);
+    const holiday = isHoliday(cur, holMap);
+
+    if(holiday || weekend){
+      // split day+night
+      slots.push({date:cur, type: holiday ? "holiday_day":"weekend_day", role:"G1", assigned:null, points:0});
+      slots.push({date:cur, type: holiday ? "holiday_night":"weekend_night", role:"G1", assigned:null, points:0});
+    } else {
+      // weekday night
+      slots.push({date:cur, type:"weekday_night", role:"G1", assigned:null, points:0});
+    }
+    cur = addDaysISO(cur,1);
+  }
+  // compute points
+  for(const s of slots){ s.points = pointsForSlot(s); }
+  return {slots, holMap};
+}
+
+/* =============================
+   Preferences model per person
+   pref[date] = "none" | "avoid_guard" | "prefer_guard" | "avoid_leave" | "block_consult"
+============================= */
+function getPersonById(id){ return state.people.find(p=>p.id===id); }
+function getPersonByName(name){ return state.people.find(p=>p.name===name); }
+function ensurePersonPrefs(p){ if(!p.pref) p.pref = {}; }
+function getTag(p, iso){ ensurePersonPrefs(p); return p.pref[iso] || "none"; }
+function setTag(p, iso, tag){
+  ensurePersonPrefs(p);
+  if(tag==="none") delete p.pref[iso];
+  else p.pref[iso]=tag;
+}
+const TAG_CYCLE = ["none","avoid_guard","prefer_guard","avoid_leave","block_consult"];
+
+function tagLabel(tag){
+  switch(tag){
+    case "avoid_guard": return "Éviter garde";
+    case "prefer_guard": return "Préférer garde";
+    case "avoid_leave": return "Éviter congé";
+    case "block_consult": return "Bloc consult";
+    default: return "Libre";
+  }
+}
+
+/* =============================
+   Auto assignment (greedy balanced)
+============================= */
+function personPoints(personId){
+  let sum=0;
+  for(const s of state.admin.slots){
+    if(s.assigned===personId) sum += (s.points||0);
+  }
+  return sum;
+}
+function hasAssignmentOn(personId, iso){
+  return state.admin.slots.some(s=>s.assigned===personId && s.date===iso);
+}
+function hasAssignmentNear(personId, iso){
+  // check day-1 and day+1
+  const d0 = addDaysISO(iso,-1);
+  const d1 = addDaysISO(iso, 1);
+  return state.admin.slots.some(s=>s.assigned===personId && (s.date===d0 || s.date===d1));
+}
+function isUnavailableFor(person, iso){
+  const tag = getTag(person, iso);
+  // "avoid_guard" is not absolute unavailable, but strong penalty; absolute unavailable can be modeled later
+  // For MVP: treat avoid_guard as still possible but discouraged.
+  // If you want "never": create tag "unavailable".
+  return false;
+}
+function scoreCandidate(person, slot, opts){
+  // lower score = better
+  const currentPts = personPoints(person.id);
+  let score = currentPts * 1.0;
+
+  const tag = getTag(person, slot.date);
+  if(tag==="prefer_guard") score -= (opts.wPref||3);
+  if(tag==="avoid_guard") score += (opts.wAvoid||12);
+
+  // discourage if block consult on that day (means they'd like to keep consult stable)
+  if(tag==="block_consult") score += 8;
+
+  // avoid back-to-back if option
+  if(opts.avoidBack && hasAssignmentNear(person.id, slot.date)) score += 50;
+
+  return score;
+}
+
+function autoAssign(startISO,endISO, opts){
+  // Make sure slots exist for that period
+  if(!state.admin.slots.length){
+    const gen = generateSlots(startISO,endISO);
+    state.admin.slots = gen.slots;
+  }
+
+  // clear assignments in range only (keep others if outside)
+  for(const s of state.admin.slots){
+    if(s.date>=startISO && s.date<=endISO){
+      s.assigned = null;
+    }
+  }
+
+  // Greedy: sort slots by "difficulty" (holidays/weekends first, higher points first)
+  const slots = state.admin.slots
+    .filter(s=>s.date>=startISO && s.date<=endISO)
+    .slice()
+    .sort((a,b)=> (b.points - a.points) || (a.date.localeCompare(b.date)));
+
+  for(const slot of slots){
+    // candidates = everyone for MVP (later: exclude vacations, etc.)
+    let bestId=null, bestScore=Infinity;
+    for(const p of state.people){
+      if(isUnavailableFor(p, slot.date)) continue;
+      if(hasAssignmentOn(p.id, slot.date)) continue; // only one slot per day per person for now
+
+      const sc = scoreCandidate(p, slot, opts);
+      if(sc < bestScore){ bestScore=sc; bestId=p.id; }
+    }
+    slot.assigned = bestId; // if null => unfilled
+  }
+
+  state.admin.assignmentsVersion++;
+  saveState();
+}
+
+/* =============================
+   Recup computation (MVP)
+   - any night slot assigned => recup next day
+============================= */
+function isNightSlot(slot){
+  return slot.type==="weekday_night" || slot.type==="weekend_night" || slot.type==="holiday_night";
+}
+function computeRecupForPerson(personId){
+  const recups = new Set();
+  for(const s of state.admin.slots){
+    if(s.assigned===personId && isNightSlot(s)){
+      recups.add(addDaysISO(s.date,1));
+    }
+  }
+  return recups;
+}
+
+/* =============================
+   UI binding
+============================= */
+const el = id => document.getElementById(id);
+
+function setTabs(){
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.onclick=()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      const v=t.dataset.view;
+      el("view-desiderata").style.display = (v==="desiderata")?"grid":"none";
+      el("view-admin").style.display      = (v==="admin")?"grid":"none";
+      el("view-result").style.display     = (v==="result")?"grid":"none";
+      if(v==="admin"){ renderAdmin(); }
+      if(v==="result"){ renderResult(); }
+    };
+  });
+}
+
+function initPeopleSelects(){
+  const sel = el("selPerson");
+  const res = el("resPerson");
+  sel.innerHTML=""; res.innerHTML="";
+  for(const p of state.people){
+    const o=document.createElement("option"); o.value=p.id; o.textContent=p.name; sel.appendChild(o);
+    const o2=document.createElement("option"); o2.value=p.id; o2.textContent=p.name; res.appendChild(o2);
+  }
+}
+
+function setDefaultDates(){
+  const t = todayISO();
+  el("rangeStart").value = t;
+  el("rangeEnd").value = addDaysISO(t, 60);
+  el("admStart").value = t;
+  el("admEnd").value = addDaysISO(t, 60);
+
+  const ym = ymFromISO(t);
+  el("monthPick").value = ym;
+  el("resMonth").value = ym;
+}
+
+function renderDOW(targetId){
+  const cont = el(targetId);
+  cont.innerHTML="";
+  for(const d of DOW){
+    const x=document.createElement("div");
+    x.className="dow"; x.textContent=d;
+    cont.appendChild(x);
+  }
+}
+
+function monthLabel(ym){
+  const [y,m]=ym.split("-").map(Number);
+  const names=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  return `${names[m-1]} ${y}`;
+}
+
+function buildMonthDays(ym){
+  const first = new Date(ym+"-01T00:00:00");
+  const y=first.getFullYear(), m=first.getMonth();
+  const startWd = (first.getDay()+6)%7; // Mon=0
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const cells = [];
+  // pad before
+  for(let i=0;i<startWd;i++) cells.push(null);
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = new Date(y, m, d).toISOString().slice(0,10);
+    cells.push(iso);
+  }
+  // pad after to complete weeks
+  while(cells.length%7!==0) cells.push(null);
+  return cells;
+}
+
+function renderDesiderata(){
+  const pid = el("selPerson").value;
+  const p = getPersonById(pid);
+  if(!p) return;
+
+  // sync params
+  el("fte").value = p.fte ?? 1.0;
+  el("wishLeaves").value = p.wishLeaves ?? 0;
+
+  const startISO = el("rangeStart").value || todayISO();
+  const endISO = el("rangeEnd").value || addDaysISO(startISO,60);
+  const holMap = buildHolidayMapForRange(startISO,endISO);
+
+  const ym = el("monthPick").value || ymFromISO(todayISO());
+  el("calLabel").textContent = monthLabel(ym);
+
+  const monthCells = buildMonthDays(ym);
+  const holCount = Object.keys(holMap).filter(d=>d.startsWith(ym)).length;
+  el("holCount").textContent = `Fériés (période) : ${Object.keys(holMap).length} — ce mois: ${holCount}`;
+
+  const cal = el("cal");
+  cal.innerHTML="";
+
+  const t = todayISO();
+  for(const iso of monthCells){
+    const box=document.createElement("div");
+    box.className="day";
+    if(!iso){
+      box.style.opacity=.35; box.style.cursor="default";
+      cal.appendChild(box);
+      continue;
+    }
+
+    const tag = getTag(p, iso);
+    if(tag==="avoid_guard") box.classList.add("off");
+    if(tag==="prefer_guard") box.classList.add("pref");
+    if(isHoliday(iso, holMap)) box.classList.add("hol");
+    if(iso===t) box.classList.add("today");
+
+    const n=document.createElement("div");
+    n.className="n";
+    n.textContent = iso.slice(8,10);
+
+    const badges=document.createElement("div");
+    badges.className="badges";
+
+    if(isHoliday(iso, holMap)){
+      const b=document.createElement("span");
+      b.className="b note";
+      b.textContent = holMap[iso];
+      badges.appendChild(b);
+    }
+    if(tag!=="none"){
+      const b=document.createElement("span");
+      b.className="b note";
+      b.textContent = tagLabel(tag);
+      badges.appendChild(b);
+    }
+
+    box.appendChild(n);
+    box.appendChild(badges);
+
+    box.onclick=()=>{
+      // only within editable range? keep simple: allow all
+      const cur = getTag(p, iso);
+      const idx = TAG_CYCLE.indexOf(cur);
+      const next = TAG_CYCLE[(idx+1)%TAG_CYCLE.length];
+      setTag(p, iso, next);
+      saveState();
+      renderDesiderata();
+      renderPrefSummary();
+    };
+
+    cal.appendChild(box);
+  }
+
+  renderPrefSummary();
+}
+
+function renderPrefSummary(){
+  const pid = el("selPerson").value;
+  const p = getPersonById(pid);
+  const list = el("prefSummary");
+  list.innerHTML="";
+
+  const counts = {avoid_guard:0, prefer_guard:0, avoid_leave:0, block_consult:0};
+  for(const d in (p.pref||{})){
+    const t=p.pref[d];
+    if(counts[t]!==undefined) counts[t]++;
+  }
+
+  const mk = (k,v)=>{
+    const it=document.createElement("div"); it.className="item";
+    const meta=document.createElement("div"); meta.className="meta";
+    const kk=document.createElement("div"); kk.className="k"; kk.textContent=k;
+    const vv=document.createElement("div"); vv.className="v"; vv.textContent=v;
+    meta.appendChild(kk); meta.appendChild(vv);
+    it.appendChild(meta);
+    return it;
+  };
+
+  list.appendChild(mk("Mi-temps / FTE", String(p.fte ?? 1.0)));
+  list.appendChild(mk("Congés souhaités (période)", String(p.wishLeaves ?? 0)));
+  list.appendChild(mk("Jours « éviter garde »", String(counts.avoid_guard)));
+  list.appendChild(mk("Jours « préférer garde »", String(counts.prefer_guard)));
+  list.appendChild(mk("Jours « éviter congé »", String(counts.avoid_leave)));
+  list.appendChild(mk("Jours « bloc consultations »", String(counts.block_consult)));
+}
+
+/* ============ Admin view ============ */
+function renderAdmin(){
+  renderSlotList();
+  renderPointsBoard();
+}
+
+function slotLabel(s){
+  const map = {
+    weekday_night: "Semaine (nuit 18-9)",
+    weekend_day: "Week-end (jour 8-18)",
+    weekend_night: "Week-end (nuit 18-8)",
+    holiday_day: "Férié (jour 8-18)",
+    holiday_night: "Férié (nuit 18-8)"
+  };
+  return map[s.type] || s.type;
+}
+
+function renderSlotList(){
+  const list = el("slotList");
+  list.innerHTML="";
+  const slots = state.admin.slots.slice().sort((a,b)=>a.date.localeCompare(b.date) || a.type.localeCompare(b.type));
+  for(const s of slots){
+    const it=document.createElement("div"); it.className="item";
+    const meta=document.createElement("div"); meta.className="meta";
+    meta.innerHTML = `
+      <div class="k">${s.date}</div>
+      <div class="v">${slotLabel(s)} <span class="mono">(${s.points} pts)</span></div>
+    `;
+    const right=document.createElement("div"); right.style.display="flex"; right.style.gap="8px"; right.style.alignItems="center";
+
+    const sel=document.createElement("select");
+    const empty=document.createElement("option"); empty.value=""; empty.textContent="— non attribué —";
+    sel.appendChild(empty);
+    for(const p of state.people){
+      const o=document.createElement("option"); o.value=p.id; o.textContent=p.name;
+      if(s.assigned===p.id) o.selected=true;
+      sel.appendChild(o);
+    }
+    sel.onchange=()=>{
+      s.assigned = sel.value || null;
+      state.admin.assignmentsVersion++;
+      saveState();
+      renderPointsBoard();
+    };
+
+    right.appendChild(sel);
+    it.appendChild(meta);
+    it.appendChild(right);
+    list.appendChild(it);
+  }
+
+  if(!slots.length){
+    const it=document.createElement("div"); it.className="hint";
+    it.textContent="Aucun slot. Clique « Générer slots ».";
+    list.appendChild(it);
+  }
+}
+
+function renderPointsBoard(){
+  const board = el("pointsBoard");
+  board.innerHTML="";
+  const rows = state.people.map(p=>{
+    return {name:p.name, id:p.id, points: personPoints(p.id)};
+  }).sort((a,b)=>a.points-b.points);
+
+  const min = rows.length? rows[0].points : 0;
+  const max = rows.length? rows[rows.length-1].points : 0;
+
+  for(const r of rows){
+    const it=document.createElement("div"); it.className="item";
+    const meta=document.createElement("div"); meta.className="meta";
+    const spread = (max-min)||1;
+    const ratio = (r.points-min)/spread;
+    meta.innerHTML = `
+      <div class="k">${r.name}</div>
+      <div class="v">${r.points.toFixed(1)} points <span class="mono">(${ratio.toFixed(2)} eq)</span></div>
+    `;
+    it.appendChild(meta);
+    board.appendChild(it);
+  }
+}
+
+/* ============ Result view ============ */
+function renderResult(){
+  const pid = el("resPerson").value || state.people[0]?.id;
+  const ym = el("resMonth").value || ymFromISO(todayISO());
+  el("resLabel").textContent = monthLabel(ym);
+
+  const monthCells = buildMonthDays(ym);
+
+  // holidays for month range (just use that year)
+  const y = Number(ym.split("-")[0]);
+  const holMap = {};
+  for(const h of belgiumHolidays(y)) holMap[h.date]=h.name;
+
+  const slotsByDate = {};
+  for(const s of state.admin.slots){
+    if(!slotsByDate[s.date]) slotsByDate[s.date]=[];
+    slotsByDate[s.date].push(s);
+  }
+
+  const recups = computeRecupForPerson(pid);
+  const p = getPersonById(pid);
+
+  // points
+  const pts = personPoints(pid);
+
+  // alerts: days where recup collides with "block_consult" tag
+  let alertCount=0;
+
+  const cal = el("resCal");
+  cal.innerHTML="";
+  const t=todayISO();
+
+  for(const iso of monthCells){
+    const box=document.createElement("div");
+    box.className="day";
+    if(!iso){
+      box.style.opacity=.35; box.style.cursor="default";
+      cal.appendChild(box);
+      continue;
+    }
+    if(iso===t) box.classList.add("today");
+    if(isHoliday(iso, holMap)) box.classList.add("hol");
+
+    const n=document.createElement("div");
+    n.className="n";
+    n.textContent = iso.slice(8,10);
+
+    const badges=document.createElement("div");
+    badges.className="badges";
+
+    // assigned guards
+    const daySlots = (slotsByDate[iso]||[]).filter(s=>s.assigned===pid);
+    for(const s of daySlots){
+      const b=document.createElement("span");
+      b.className="b garde";
+      b.textContent = `Garde: ${s.type.replace("_"," ")}`;
+      badges.appendChild(b);
+    }
+
+    // recup
+    if(recups.has(iso)){
+      const b=document.createElement("span");
+      b.className="b recup";
+      b.textContent = "Récup";
+      badges.appendChild(b);
+    }
+
+    // block consult preference
+    const tag = getTag(p, iso);
+    if(tag==="block_consult"){
+      const b=document.createElement("span");
+      b.className="b bloc";
+      b.textContent = "Bloc consult";
+      badges.appendChild(b);
+      // alert if also recup (means: must block consult in real life)
+      if(recups.has(iso)) alertCount++;
+    }
+
+    // holiday label (optional)
+    if(isHoliday(iso, holMap)){
+      const b=document.createElement("span");
+      b.className="b note";
+      b.textContent = holMap[iso];
+      badges.appendChild(b);
+    }
+
+    box.appendChild(n);
+    box.appendChild(badges);
+    cal.appendChild(box);
+  }
+
+  el("resPoints").textContent = `Points: ${pts.toFixed(1)}`;
+  el("resAlerts").textContent = `Alertes (récup + bloc consult): ${alertCount}`;
+
+  // Raw preview
+  const raw = {
+    person: p.name,
+    points: pts,
+    recup: Array.from(recups).sort(),
+    assignments: state.admin.slots.filter(s=>s.assigned===pid).sort((a,b)=>a.date.localeCompare(b.date)),
+    prefs: p.pref || {}
+  };
+  el("rawPreview").value = JSON.stringify(raw, null, 2);
+}
+
+/* =============================
+   Events
+============================= */
+setTabs();
+initPeopleSelects();
+setDefaultDates();
+renderDOW("calDOW");
+renderDOW("resDOW");
+
+// Desiderata bindings
+el("selPerson").onchange = () => renderDesiderata();
+el("monthPick").onchange = () => renderDesiderata();
+el("rangeStart").onchange = () => renderDesiderata();
+el("rangeEnd").onchange = () => renderDesiderata();
+
+el("prevMonth").onclick = () => {
+  const cur = el("monthPick").value;
+  const d = new Date(cur+"-01T00:00:00");
+  d.setMonth(d.getMonth()-1);
+  el("monthPick").value = d.toISOString().slice(0,7);
+  renderDesiderata();
+};
+el("nextMonth").onclick = () => {
+  const cur = el("monthPick").value;
+  const d = new Date(cur+"-01T00:00:00");
+  d.setMonth(d.getMonth()+1);
+  el("monthPick").value = d.toISOString().slice(0,7);
+  renderDesiderata();
+};
+el("btnToday").onclick = () => {
+  el("monthPick").value = ymFromISO(todayISO());
+  renderDesiderata();
+};
+
+el("fte").onchange = () => {
+  const p=getPersonById(el("selPerson").value);
+  p.fte = Number(el("fte").value||1.0);
+  saveState(); renderPrefSummary();
+};
+el("wishLeaves").onchange = () => {
+  const p=getPersonById(el("selPerson").value);
+  p.wishLeaves = Number(el("wishLeaves").value||0);
+  saveState(); renderPrefSummary();
+};
+
+el("btnSave").onclick = () => { saveState(); renderDesiderata(); };
+
+el("btnResetMe").onclick = () => {
+  const p=getPersonById(el("selPerson").value);
+  if(!confirm("Reset personne (prefs + paramètres) ?")) return;
+  p.pref = {};
+  p.fte = 1.0;
+  p.wishLeaves = 0;
+  saveState();
+  renderDesiderata();
+};
+
+el("btnExportMe").onclick = () => {
+  const p=getPersonById(el("selPerson").value);
+  const data = { person: p, exportedAt: new Date().toISOString() };
+  downloadJSON(data, `desiderata_${p.name.replace(/\s+/g,"_")}.json`);
+};
+el("btnImportMe").onclick = () => el("fileImportMe").click();
+el("fileImportMe").onchange = async (ev) => {
+  const f = ev.target.files[0]; if(!f) return;
+  const txt = await f.text();
+  const data = JSON.parse(txt);
+  if(!data.person || !data.person.id) { alert("JSON invalide."); return; }
+  // merge by id if exists
+  const idx = state.people.findIndex(x=>x.id===data.person.id);
+  if(idx>=0) state.people[idx] = data.person;
+  else state.people.push(data.person);
+  saveState();
+  initPeopleSelects();
+  renderDesiderata();
+  ev.target.value="";
+};
+
+// Admin bindings
+el("btnComputeSlots").onclick = () => {
+  const s=el("admStart").value||todayISO();
+  const e=el("admEnd").value||addDaysISO(s,60);
+  const gen = generateSlots(s,e);
+  state.admin.slots = gen.slots;
+  state.admin.assignmentsVersion++;
+  saveState();
+  renderAdmin();
+};
+
+el("btnAutoAssign").onclick = () => {
+  const s=el("admStart").value||todayISO();
+  const e=el("admEnd").value||addDaysISO(s,60);
+  const opts = {
+    avoidBack: el("avoidBack").value==="1",
+    wPref: Number(el("wPref").value||3),
+    wAvoid: Number(el("wAvoid").value||12)
+  };
+  autoAssign(s,e,opts);
+  renderAdmin();
+};
+
+el("btnResetAll").onclick = () => {
+  if(!confirm("Reset global (slots + affectations + prefs) ?")) return;
+  state = loadState(); // back to defaults
+  saveState();
+  initPeopleSelects();
+  renderDesiderata();
+  renderAdmin();
+  renderResult();
+};
+
+el("btnExportAll").onclick = () => {
+  const data = { state, exportedAt: new Date().toISOString() };
+  downloadJSON(data, `gardes_app_export.json`);
+};
+el("btnImportAll").onclick = () => el("fileImportAll").click();
+el("fileImportAll").onchange = async (ev) => {
+  const f = ev.target.files[0]; if(!f) return;
+  const txt = await f.text();
+  const data = JSON.parse(txt);
+  if(!data.state) { alert("JSON invalide."); return; }
+  state = data.state;
+  saveState();
+  initPeopleSelects();
+  renderDesiderata();
+  renderAdmin();
+  renderResult();
+  ev.target.value="";
+};
+
+// Result bindings
+el("resPerson").onchange = () => renderResult();
+el("resMonth").onchange = () => renderResult();
+el("resPrev").onclick = () => {
+  const cur = el("resMonth").value;
+  const d = new Date(cur+"-01T00:00:00");
+  d.setMonth(d.getMonth()-1);
+  el("resMonth").value = d.toISOString().slice(0,7);
+  renderResult();
+};
+el("resNext").onclick = () => {
+  const cur = el("resMonth").value;
+  const d = new Date(cur+"-01T00:00:00");
+  d.setMonth(d.getMonth()+1);
+  el("resMonth").value = d.toISOString().slice(0,7);
+  renderResult();
+};
+el("btnExportPersonPlan").onclick = () => {
+  const pid = el("resPerson").value;
+  const p = getPersonById(pid);
+  const recups = Array.from(computeRecupForPerson(pid)).sort();
+  const data = {
+    person: p.name,
+    points: personPoints(pid),
+    assignments: state.admin.slots.filter(s=>s.assigned===pid).sort((a,b)=>a.date.localeCompare(b.date)),
+    recup,
+    prefs: p.pref||{}
+  };
+  downloadJSON(data, `planning_${p.name.replace(/\s+/g,"_")}.json`);
+};
+
+// utils
+function downloadJSON(obj, filename){
+  const blob = new Blob([JSON.stringify(obj,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// initial render
+renderDesiderata();
+renderResult();
+</script>
+</body>
+</html>
